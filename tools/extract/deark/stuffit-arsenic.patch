@@ -1,0 +1,22 @@
+diff --git a/modules/stuffit.c b/modules/stuffit.c
+index fbbfc85..cbf8eb9 100644
+--- a/modules/stuffit.c
++++ b/modules/stuffit.c
+@@ -398,6 +398,8 @@ done:
+ 	de_dbg_indent_restore(c, saved_indent_level);
+ }
+ 
++#include "arsenic.inc"
++
+ static const struct cmpr_meth_info cmpr_meth_info_arr[] = {
+ 	{ CMPR_NONE, "uncompressed", do_decompr_uncompressed },
+ 	{ CMPR_RLE, "RLE",  do_decompr_rle },
+@@ -408,7 +410,7 @@ static const struct cmpr_meth_info cmpr_meth_info_arr[] = {
+ 	{ CMPR_MW, "MW", NULL },
+ 	{ CMPR_LZHUFF, "LZ+Huffman", NULL },
+ 	{ 14, "installer", NULL },
+-	{ 15, "Arsenic", NULL }
++	{ 15, "Arsenic", do_decompr_arsenic }
+ };
+ 
+ static const struct cmpr_meth_info *find_cmpr_meth_info(deark *c, u8 id)
