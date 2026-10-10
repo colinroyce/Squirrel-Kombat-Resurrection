@@ -164,7 +164,7 @@
       logo(ctx, SK.W / 2, SK.H * 0.36, 0.6 + 0.4 * SK.ease.back(k), this.t);
       G().text(ctx, 'R E S U R R E C T I O N', SK.W / 2, SK.H * 0.36 + 72, { size: 24, align: 'center', color: '#ffe0b0', font: G().UI_FONT, stroke: '#300', strokeW: 4, alpha: k });
       if (Math.floor(this.t / 28) % 2 === 0) G().text(ctx, 'PRESS START', SK.W / 2, SK.H * 0.76, { size: 34, align: 'center', font: G().TITLE_FONT, gradient: ['#ffffff', '#ffd040'], stroke: '#300', strokeW: 5 });
-      G().text(ctx, '© 1999 Monkey Farm Software (original)  ·  fan remake ' + SK.VERSION, SK.W / 2, SK.H - 20, { size: 13, align: 'center', color: '#a07850', font: G().BODY_FONT });
+      G().text(ctx, 'Unofficial fan remake ' + SK.VERSION + '  ·  original Squirrel Kombat (1999) by John Butler / Monkey Farm Software', SK.W / 2, SK.H - 20, { size: 13, align: 'center', color: '#a07850', font: G().BODY_FONT });
     }
   }
 
