@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squirrel Kombat</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  #screen { display: block; image-rendering: pixelated; image-rendering: crisp-edges; cursor: none; }
+  #gate {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #ccc; font: 14px Geneva, Verdana, sans-serif; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<canvas id="screen" width="640" height="480"></canvas>
+<div id="gate"><span id="status">Loading</span></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

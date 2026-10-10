@@ -394,7 +394,7 @@ Duration: DrawSprocket's fixed fade time (to be measured from the gameplay video
 - HandleTitle: CustomLoop, CheckTitleKeyDown, camera (inactive), HandleSprites, HandleQuakes, HandleSparks,
   HandleLightning, DrawSprites.
 - Sprites (NewTitleScreenSprites; PlaySound(15) first): 4 buttons at y top 480 (64×32 cicn strips, 3 frames: normal,
-  hover, pressed): Start 1109 at x 48, Options 1112 at x 208, Scores 1115 at x 368, Quit 1136 at x 528 (vy −7 in template).
+  hover, pressed): Start 1109 ("PLAY") at x 48, Options 1112 at x 208, Scores 1136 at x 368, Quit 1115 at x 528 (vy −7 in template).
   Then the cursor (slot 199) and 15 title letters (cicn 1120 + i, 32×32, speed 10) all starting at (304,150)-(336,182),
   homing to (info0 = 112 + 32i, info1 = 150).
 - Button handler: action1 0 rising 12 px/frame until top < 401 → 1. 1: hover → 2 (PlaySound 18). 2: leave → 1 (PlaySound 16);
