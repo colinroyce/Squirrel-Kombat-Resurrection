@@ -27,7 +27,9 @@ def decode(blob):
     colors = {}
     for i in range(ct_size + 1):
         val, r, g, b = struct.unpack('>4H', blob[p:p + 8])
-        colors[i if ct_flags & 0x8000 else val] = map_rgb16((r, g, b))
+        # When a value is listed twice, the first entry wins: cicn 1128 (the title's blank
+        # tile) lists 0 as white then black, and the original draws it see-through.
+        colors.setdefault(i if ct_flags & 0x8000 else val, map_rgb16((r, g, b)))
         p += 8
     pix = blob[p:p + rb * h]
     out = bytearray(w * h * 4)

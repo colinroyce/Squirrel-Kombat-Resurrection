@@ -47,6 +47,10 @@ export const T = {
   projLeft: init(1119, 1, 4, 64, 8, 25, { dir: 1 }),
   cursor: init(7000, 6, 3, 32, 32, 8),
   letters: Array.from({ length: 15 }, (_, i) => init(1120 + i, 1, 4, 32, 32, 10, { info0: 112 + 32 * i, info1: 150 })),
+  // Not in the original: a second line, RESURREKTION, centred under the title from the same
+  // letters (cicn 1120 + i spells SQUIRREL KOMBAT) plus an added N (30000).
+  subtitle: [1124, 1126, 1120, 1122, 1124, 1125, 1126, 1129, 1134, 1123, 1130, 30000]
+    .map((id, i) => init(id, 1, 4, 32, 32, 10, { info0: 160 + 32 * i, info1: 182 })),
   // buttons (PICT strips of 3 states)
   ok: init(129, 3, 2, 100, 32, 5),
   keyOk: init(155, 3, 2, 100, 32, 5),

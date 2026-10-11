@@ -61,7 +61,8 @@ async function HandleTitle() {
 }
 
 function CustomLoop() {
-  if (Rand(9000) > 8900 || GetNumSprites() < 23) {
+  // The added RESURREKTION letters are left out of the count, so kickers spawn as in the original.
+  if (Rand(9000) > 8900 || GetNumSprites() - T.subtitle.length < 23) {
     if (Rand(2) === 0) NewFlyKicker(2); else NewFlyKicker(1);
   }
   // The credits hot spot (0,428)-(94,480) is not part of this build yet.
@@ -85,6 +86,7 @@ export function NewTitleScreenSprites() {
   for (let i = 0; i < 15; i++) {
     NewSpriteFromCICN(T.letters[i], setRect({}, 304, 150, 336, 182), HandleLetter);
   }
+  for (const t of T.subtitle) NewSpriteFromCICN(t, setRect({}, 304, 150, 336, 182), HandleLetter);
 }
 
 // ---- the four title buttons ----------------------------------------------------------------

@@ -17,11 +17,20 @@ function loadImage(url) {
   });
 }
 
+// Art made for the Resurrection that the original does not have (see assets/added/README.md),
+// loaded as extra 32x32 icons.
+const ADDED_CICN = { 30000: 'added/title-n.png' };
+
 export async function loadAssets(base, onProgress) {
   const m = await (await fetch(base + 'manifest.json')).json();
   assets.manifest = m;
   const jobs = [];
   m.cicnSheets.forEach((f, i) => jobs.push(loadImage(base + f).then((img) => { assets.sheets[i] = img; })));
+  Object.entries(ADDED_CICN).forEach(([id, f], k) => {
+    const sheet = m.cicnSheets.length + k;
+    m.cicn[id] = [sheet, 0, 0, 32, 32, 8];
+    jobs.push(loadImage(base + f).then((img) => { assets.sheets[sheet] = img; }));
+  });
   for (const [id, info] of Object.entries(m.pict)) {
     jobs.push(loadImage(base + info.file).then((img) => { assets.pict.set(Number(id), img); }));
   }
