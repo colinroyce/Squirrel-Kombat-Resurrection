@@ -12,7 +12,7 @@ import {
   NewSpriteFromCICNSpecial, NewSpriteFromPICT, SetSpriteAction1, SetSpriteFrame, SetSpriteRect,
 } from '../sprites.js';
 import { HandleSparks, MakeSparks } from '../sparks.js';
-import { PlaySound } from '../sound.js';
+import { PlayMusic, PlaySound, StopMusic } from '../sound.js';
 import { BlankOutTutorial, DontDrawLifeBars, InitLife, InitRoundData, InitScores, SetDrawTime } from '../hud.js';
 import { Fade, FadeBack } from '../fade.js';
 import { T } from '../templates.js';
@@ -55,6 +55,9 @@ function ChooseChar(p, c) {
 const modeBuilt = (m) => m === 0 || m === 1 || m === 2;
 
 export async function OpenSelection() {
+  // Not in the original (Colin's request): the theme plays only on the title, character and
+  // scene screens, not during fights. The original kept it playing throughout.
+  PlayMusic(0);
   await Fade(0);
   DontDrawLifeBars();
   SetRenderOptions(0, 0);
@@ -77,11 +80,13 @@ export async function OpenSelection() {
     await KillSpriteControls();
     if (GetPlayMode() === 2) {
       await Fade(0);
+      StopMusic(); // Not in the original: no music in fights (see OpenSelection)
       InitTournament();
       await OpenTournamentScreen();
       ChooseRandomScene();
     } else {
       await OpenSceneSelector();
+      StopMusic(); // Not in the original: no music in fights (see OpenSelection)
     }
     await Fade(0);
     SetDrawTime(0);

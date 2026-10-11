@@ -29,6 +29,7 @@ Since then:
   CPU playing them as the original does.
 - Tournament mode: climb the ladder of fighters, then the win screen and the high score table.
   The SCORES button on the title screen shows the tables.
+- The theme music plays on the menus but not during fights (the original played it throughout).
 - Pausing (P) shows a move guide: the controls and every fighter's special moves in your own keys,
   one page each, flipped with the arrow keys. (An addition: in 1999 the moves were in a separate
   text file.)

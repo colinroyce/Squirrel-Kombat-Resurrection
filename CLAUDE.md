@@ -225,6 +225,9 @@ capstone, and a patched deark.
   rebuilds; the contents and layout are the game's own DLOG/DITL 999 (`OpenScoreDialog`).
 - **High scores and the Muskrat unlock are saved in the browser** (the original used its
   preferences file).
+- **No music during fights**: the theme plays on the title, character and scene screens and stops
+  when a fight (or the Tournament ladder) starts (`OpenSelection` in `src/screens/select.js`). The
+  original kept it playing throughout.
 - **10 pt text in the Geneva 9 glyphs** (see decision 7).
 - **The pause move guide** (`src/screens/pauseguide.js`): P shows a Controls page and one page per
   fighter (combos in the player's current keys, facing right; Military Muskrat hidden until
