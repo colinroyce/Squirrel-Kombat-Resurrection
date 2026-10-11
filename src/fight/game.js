@@ -23,6 +23,7 @@ import { KeepSpriteOnScreen, OnScreen, nextFrame, uncappedFrame } from '../commo
 import { GetChosenChar, GetKey, GetNumPlayers, GetPlayMode, GetScene } from '../state.js';
 import { OnSurface, PartnerOfMe } from './player.js';
 import { HandleEd, HandleSpeedy, NewFireBall, NewPurpleBeam, NewSpin3Ball } from './chars.js';
+import { HandleIce, NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
 import { ForestRun, NewSceneSprites } from './forest.js';
 import { TundraRun } from './tundra.js';
 import { CityRun } from './city.js';
@@ -40,7 +41,7 @@ export function SetPercents(a, b, c, d) {
 export function Quit() { fight.quit = 1; }
 export function SetGoToSelection(v) { fight.goToSelection = v; }
 
-const PROCS = [HandleEd, HandleSpeedy];
+const PROCS = [HandleEd, HandleSpeedy, HandleIce];
 
 // ---- players -------------------------------------------------------------------------------
 
@@ -116,7 +117,7 @@ export async function Run() {
 
 const rec = { ring: [-1, -1, -1, -1, -1], idx: 0, last: -1 };
 
-function ClearPattern1() {
+export function ClearPattern1() {
   rec.ring.fill(-1);
   rec.idx = 0;
 }
@@ -179,6 +180,24 @@ function CheckMoves1() {
     } else if (CheckPattern1(0, 0, 2, 2, 6) || CheckPattern1(2, 2, 0, 0, 6)) {
       ClearPattern1();
       if (free()) NewFireBall(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    }
+  } else if (ch === 2) {
+    if (CheckPattern1(2, 2, 3, 5) || CheckPattern1(0, 0, 3, 5)) {
+      ClearPattern1();
+      if (a2() !== 5) NewIceBlast(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    } else if (CheckPattern1(0, 0, 2, 4) || CheckPattern1(2, 2, 0, 4)) {
+      ClearPattern1();
+      if (a2() !== 5) NewIceFist(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    } else if (CheckPattern1(3, 4, 5)) {
+      ClearPattern1();
+      if (OnSurface(r, 0) && a2() !== 5) {
+        NewIceColumn(r, 0, 0);
+        SetSpriteAction2(0, 0xf);
+        SetSpriteInfo(0, 5, 0);
+      }
+    } else if (CheckPattern1(3, 6, 1)) {
+      ClearPattern1();
+      if (a2() !== 5) NewIceBlast2(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
     }
   }
 }

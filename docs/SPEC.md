@@ -163,6 +163,28 @@ Same AI/HandlePlayer prologue. info5 counts frames; each ends after info5 > 7 �
 - 0xf scorch: frame 60/61; NewFire(rect, info1, type) each frame then move ±32 px/frame.
 - Then HandlePlayer2; KeepSpriteOnScreen always.
 
+## Ice (HandleIce, character 2)
+Same prologue. Only one own state: 0xf (riding the ice column): info5++; info5 < 8 → move up 32 px; info5 > 7 → vx 0,
+vy −10, action2 3. Then HandlePlayer2; KeepSpriteOnScreen always. No Ice-specific code in HandlePlayer/CheckKeyDown/AI.
+- Keys (CheckMoves1, in order): (2,2,3,5)/(0,0,3,5) Ice Blast; (0,0,2,4)/(2,2,0,4) Ice Fist; (3,4,5) Ice Column (only if
+  OnSurface); (3,6,1) far-edge Ice Blast. Each needs action2 != 5. DoSpecialMove 0–3 = the same four; move 2 also calls
+  ClearPattern1 (player 1's ring, even for the CPU).
+- NewIceBlast(rect, opp, num, dir, group) (cicn 330, 2 frames, 32×32, speed 14) / NewIceBlast2 (cicn 337): Blast2 starts at
+  (1024..1056) if dir 0 else (−32..0), same top/bottom, flying dir = !dir. HandleIceBlast (both): frame = dir; move ±14;
+  spark trail Rand(2) == 0 ? cyan 0x111 : white 0x1e (count 2, life 8, speed 5); hit (blast inset 2,6; opp 2,2): 8 sparks,
+  victim = opp, **but if opp.action1 == 0x12 (already frozen) the victim is info3 = the caster** (original quirk);
+  DoDamage(victim, 10, num); info4 = frame; NewIceCube(victim); dies; info7 = 150, info2 0, action1 0x12, action2 2
+  (frozen 150 frames by HandlePlayer2). Off screen → dies.
+- Ice cube (cicn 332 = 0x14c, runs in HandleSprites' second pass): rect = victim's rect each frame; dies when victim's
+  action1 != 0x12.
+- NewIceFist (cicn 334, speed 32): rect offset ±32 in dir. HandleIceFist: first frame only sets info7 = 1. Then: info5 < 3 →
+  NewIceArm at its rect (cicn 333, DoNothing-like HandleIceArm); info5 > 3 → moves backwards; info5++. info5 > 8 → dies.
+  info5 > 2 → kills its group's arm pieces it touches. Touching opp (2,2,2,2), every frame: path (±20, −5), opp faces
+  back, frame 0x22/0x23 (unless dead/dummy), DoDamage(opp, 15), action2 5 unless dead.
+- NewIceColumn(rect, group, n) (cicn 336, action2 0): info9 = n + 1. Each piece: frame 1 → action2 1; next → if info9 < 7
+  NewIceColumn2 (32 px higher, info9 + 1); then counts info7 to 50 and kills all type 336 of its group. Callers pass the
+  fighter's slot as n, so player 1's column is 7 pieces and slot 1's is 6 (original quirk). Scenery only (not a platform).
+
 ## Projectiles
 Hit test is DetectCollision(a, b, insets…) — rects shrunk by the given insets before intersecting.
 Standard "hit" = DoDamage, opp action2 5 unless dead, path += knockback, set dir and frame unless dead or picID 500.

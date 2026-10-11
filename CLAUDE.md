@@ -81,7 +81,7 @@ Notes:
 
 Make all of these fully playable in ONE ON ONE mode (1 player vs the CPU), faithful to the binary:
 
-- **Fighters:** ICE, INVISIBLE, NINJA, MECH, KATHY, GEORGE, PHILBERT, SUPER SQUIRREL, CORPSE,
+- **Fighters:** ICE (done, awaiting Colin's check), INVISIBLE, NINJA, MECH, KATHY, GEORGE, PHILBERT, SUPER SQUIRREL, CORPSE,
   plus MILITARY MUSKRAT once the unlock rule is settled. ED and SPEEDY are done.
 - **Scenes:** all five are done (Field, Tundra, Great Wall and City added after milestone 1; awaiting
   Colin's check).
@@ -172,6 +172,7 @@ Code map (`src/`):
   - `field.js` — the Field's butterflies
   - `tundra.js` — the Tundra's snow and snowballs (`TundraRun`)
   - `city.js` — the City's bird flocks (`CityRun`)
+  - `ice.js` — Ice: `HandleIce`, Ice Blast, Ice Fist, Ice Column, the ice cube
 
 ## Reverse-engineering files (not in git)
 

@@ -95,6 +95,12 @@ export const T = {
   spinBall: init(198, 4, 0, 32, 32, 9, { action2: 0 }),
   fire: init(264, 4, 1, 32, 16, 8),
   fireBall: init(268, 2, 1, 32, 32, 16),
+  iceBlast: init(330, 2, 2, 32, 32, 14),
+  iceCube: init(332, 1, 2, 32, 32, 12),
+  iceArm: init(333, 1, 2, 32, 32, 32),
+  iceFist: init(334, 2, 2, 32, 32, 32),
+  iceColumn: init(336, 1, 2, 32, 32, 32, { action2: 0 }),
+  iceBlast2: init(337, 2, 2, 32, 32, 14),
   // scenes
   deathAcorn: init(591, 1, 2, 20, 29, 18, { action2: 0 }),
   eye: init(1076, 6, 4, 24, 16, 0, { action1: 0 }),

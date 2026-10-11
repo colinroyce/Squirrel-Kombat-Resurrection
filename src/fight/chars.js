@@ -1,4 +1,5 @@
-// Ed and Speedy (HandleEd / HandleSpeedy), their special moves and projectiles, and the CPU AI.
+// Ed and Speedy (HandleEd / HandleSpeedy), their special moves and projectiles, the CPU AI and
+// DoSpecialMove for every fighter. Later fighters live in their own files (ice.js, ...).
 
 import { Rand, detectCollision, insetRect, offsetRect } from '../mac.js';
 import {
@@ -13,11 +14,12 @@ import { GetNumPlayers, GetPlayMode } from '../state.js';
 import { T } from '../templates.js';
 import { KeepSpriteOnScreen, OnScreen } from '../common.js';
 import { GetOpp, HandlePlayer, HandlePlayer2, OnSurface } from './player.js';
-import { HandleDeadPlayer, percents } from './game.js';
+import { ClearPattern1, HandleDeadPlayer, percents } from './game.js';
+import { NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
 
 // ---- shared ----------------------------------------------------------------------------------
 
-function isCPU(s) {
+export function isCPU(s) {
   if (GetNumSpritesType(0x97) >= 1 || s.type === 0x96) return false;
   return (GetNumPlayers() === 1 && s.num === 1) ||
     (GetNumPlayers() === 2 && GetPlayMode() !== 0 && (s.num === 2 || s.num === 3));
@@ -327,6 +329,21 @@ export function DoSpecialMove(n, ch, move) {
     else if (move === 1) { SetSpriteAction2(n, 0xe); SetSpriteInfo(n, 5, 0); }
     else if (move === 2) { SetSpriteAction2(n, 0xf); SetSpriteInfo(n, 5, 0); }
     else if (move === 3) NewFireBall(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+  } else if (ch === 2) {
+    if (move === 0) {
+      if (a2 !== 5) NewIceBlast(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
+    } else if (move === 1) {
+      if (a2 !== 5) NewIceFist(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
+    } else if (move === 2) {
+      ClearPattern1(); // the original clears player 1's key pattern even when the CPU does this
+      if (OnSurface(r, n) && GetSpriteAction2(n) !== 5) {
+        NewIceColumn(r, n, n);
+        SetSpriteAction2(n, 0xf);
+        SetSpriteInfo(n, 5, 0);
+      }
+    } else if (move === 3) {
+      if (a2 !== 5) NewIceBlast2(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
+    }
   }
 }
 
