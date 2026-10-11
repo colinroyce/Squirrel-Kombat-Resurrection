@@ -20,6 +20,10 @@ public.
 - **Use plain language.** He is not a programmer. Describe changes by what he'll see in the
   game, and keep it short. He is careful with his usage, so work efficiently.
 - **Keep the original's bugs and quirks**, with a comment marking each one as an original quirk.
+- **The "Resurrektion" direction:** the original's game behaviour comes first, but Colin will
+  increasingly ask for changes that stray from it to make the game more modern and fun. When he
+  asks, build them (marked as additions). Where the original relied on Mac OS itself (system
+  dialogs, window chrome), a plain rebuild is fine; he'll restyle it later if he wants.
 - **Mark additions clearly.** Anything that isn't in the original (art or features) must be
   marked as an addition (see "Additions to the original"). He wants people to see what's new.
 - **Don't push, open pull requests or merge unless he asks.** He may commit and push himself in
