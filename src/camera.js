@@ -170,7 +170,7 @@ function CalcDistance() {
   }
 }
 
-function HandleSingleCamera() {
+export function HandleSingleCamera() {
   if (cam.sprite2 === 0x29a) {
     const r = GetSpriteRect(cam.sprite);
     const h = centre(r.left, r.right), v = centre(r.top, r.bottom);

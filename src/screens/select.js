@@ -17,8 +17,9 @@ import { BlankOutTutorial, DontDrawLifeBars, InitLife, InitRoundData, InitScores
 import { Fade, FadeBack } from '../fade.js';
 import { T } from '../templates.js';
 import { DoNothing, KillSpriteControls, NewCursorSprite, nextFrame } from '../common.js';
-import { GetDiffPref, GetKey, GetNumPlayers, GetPlayMode, STAGED_CHARS, SetPlayMode, sel } from '../state.js';
+import { ChooseRandomScene, GetDiffPref, GetKey, GetNumPlayers, GetPlayMode, STAGED_CHARS, SetPlayMode, sel } from '../state.js';
 import { OpenSceneSelector } from './scene.js';
+import { InitTournament, OpenTournamentScreen } from './tournament.js';
 import { DoTitle } from './title.js';
 import { CreatePlayers, DoRoundAnimation, InitKeyRecorder, Run, SetPercents, fight } from '../fight/game.js';
 import { InitScene } from '../fight/forest.js';
@@ -51,7 +52,7 @@ function ChooseChar(p, c) {
 }
 
 // Play modes built so far.
-const modeBuilt = (m) => m === 0;
+const modeBuilt = (m) => m === 0 || m === 1 || m === 2;
 
 export async function OpenSelection() {
   await Fade(0);
@@ -74,7 +75,14 @@ export async function OpenSelection() {
   await RunSelection();
   if (S.result === 1) {
     await KillSpriteControls();
-    await OpenSceneSelector();
+    if (GetPlayMode() === 2) {
+      await Fade(0);
+      InitTournament();
+      await OpenTournamentScreen();
+      ChooseRandomScene();
+    } else {
+      await OpenSceneSelector();
+    }
     await Fade(0);
     SetDrawTime(0);
     BlankOutTutorial();
@@ -131,7 +139,7 @@ async function RunSelection() {
 }
 
 function setMessage(m) {
-  if (m === 1 && !modeBuilt(GetPlayMode())) return; // practice / tournament / two-on-two: not built yet
+  if (m === 1 && !modeBuilt(GetPlayMode())) return; // two-on-two: not built yet
   S.done = 1;
   S.result = m;
 }

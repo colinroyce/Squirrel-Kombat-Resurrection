@@ -8,11 +8,12 @@ import { DrawSprites, GetNumSprites, HandleSprites, KillAllSprites, KillSprite, 
 import { HandleSparks } from '../sparks.js';
 import { PlayMusic, PlaySound } from '../sound.js';
 import { DontDrawLifeBars, QuitHint, StartHint } from '../hud.js';
-import { GetFadeNormal } from '../fade.js';
+import { Fade, FadeBack, GetFadeNormal } from '../fade.js';
 import { CHARS, T } from '../templates.js';
 import { NewCursorSprite, OnScreen, nextFrame } from '../common.js';
 import { OpenOptions } from './options.js';
 import { OpenSelection } from './select.js';
+import { DoHighScores } from './scores.js';
 
 const title = { message: 0 };
 
@@ -130,8 +131,8 @@ function moveProj(s) {
 
 function HandleStart(s) { titleButton(s, (r) => newProj(r, HandleStartProj)); }
 function HandleOptions(s) { titleButton(s, (r) => newProj(r, HandleOptionsProj)); }
-// High scores and Quit are not part of this build yet: the buttons highlight but ignore clicks.
-function HandleScores(s) { titleButton(s, null); }
+function HandleScores(s) { titleButton(s, (r) => newProj(r, HandleScoresProj)); }
+// Quit is not part of this build: the button highlights but ignores clicks.
 function HandleQuit(s) { titleButton(s, null); }
 
 function HandleStartProj(s) {
@@ -146,6 +147,21 @@ async function HandleOptionsProj(s) {
     KillSprite(s);
     QuitHint();
     await OpenOptions();
+  }
+}
+
+// The high score screen, then back to the title.
+async function HandleScoresProj(s) {
+  if (!moveProj(s)) {
+    KillSprite(s);
+    QuitHint();
+    await DoHighScores();
+    await Fade(0);
+    NewTitleScreenSprites();
+    fillBackWithPict(7000, 640, 480);
+    StartHint();
+    DrawSprites();
+    await FadeBack(0);
   }
 }
 

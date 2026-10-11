@@ -127,6 +127,20 @@ export function ChangeScore(n, d) {
   else hud.stray += d; // e.g. Speedy's scorch fire passes its sprite type (202) as the attacker
 }
 
+// ClearOpponentScores: the CPU side's score starts again for each Tournament fight.
+export function ClearOpponentScores() {
+  if (GetNumPlayers() === 1) {
+    hud.score[1] = 0;
+    hud.shown[1] = 0;
+  } else {
+    hud.score[2] = 0; hud.shown[2] = 0;
+    hud.score[3] = 0; hud.shown[3] = 0;
+  }
+}
+
+export const GetScore = (n) => hud.score[n];
+export function FullLife(n) { hud.life[n] = 200; }
+
 export function AddPointsForLife() {
   for (let i = 0; i < GetNumPlayers(); i++) ChangeScore(i, hud.life[i]);
 }

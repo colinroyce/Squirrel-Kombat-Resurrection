@@ -714,3 +714,58 @@ Fade(2) (red); background PICT 11000; current scene thumbnail (PICT 10001 Forest
 10008 City) drawn into the background at (192,144)-(448,336); cursor; FadeBack(2). Loop at 30 fps:
 click thumbnail → start; click (460,362)-(494,396) → next scene; click (146,362)-(180,396) → previous (wrapping 0..4),
 sound 16 each; Space/Return/Enter → start. Then the fight starts with Fade(0).
+
+## Tournament (playMode 2)
+- OpenSelection with TOURNAMENT: Fade(0), InitTournament, OpenTournamentScreen, ChooseRandomScene (registered: Rand(5)), then the
+  usual fight setup (no CPU pick: the ladder sets chosen[1]).
+- InitTournament: place 0; opp[0..11] = −1; for i 0..10: v = Rand(11) until not already used → opp[i] (fighters 0–10, so your own
+  fighter is one of them: a mirror match; Military Muskrat never). numOpp 11. Ladder rects from (368, 704)-(400, 736), 48 px up
+  per place; your icon's rects = ladder rects moved (−48, +48).
+- **Original bug:** opp[11] stays −1, CheckPlace is place ≥ 12, so after the 11th win the 12th fight is started with character −1,
+  which CreatePlayers skips (no opponent sprite): the fight can't be won, and the win screen is unreachable. The port puts
+  Military Muskrat in place 11 as the final opponent (addition, Colin's choice).
+- OpenTournamentScreen: SetRenderOptions(1, 0); PICT 5000 (1024×768); icons: yours (cicn 5000 + fighter, at p1[place]), then the 12
+  places (dead cicn 1151 + fighter below your place, else cicn 6000 + fighter), DoNothing; camera on your icon; KillCamera2,
+  DontDrawLifeBars, InitRoundData, ClearOpponentScores (CPU score reset), FadeBack(0); your icon rises 4 px a frame for 12 frames;
+  WaitInputOrTime(90 ticks, or a key/click); chosen[1] = opp[place].
+- HandleDeadPlayer, match over in playMode 2: unregistered and place > 4 → high score, selection. A human lost → AskHighScore,
+  selection. Otherwise IncreasePlace; place < 12 → next opponent: Fade(0), OpenTournamentScreen, Fade(0), SetDrawTime(0),
+  IncreaseRoundNum, ChooseRandScene, InitScene, KillAllSprites, CreatePlayers, NewSceneSprites, cameras, InitLife, InitRoundData,
+  DoRoundAnimation, Run. place 12 → Fade(1) (white), DoWinScreen, AskHighScore, selection.
+- DoWinScreen: PICT 10000 (640×480), FadeBack(1), ScrollText(STR# 128, 13 lines, rect (240, 0)-(640, 480), size 10, font 1
+  (Geneva), step 1, leading 8): lines start below the bottom, 18 px apart at x + 4, scroll up 1 px every 3 ticks; colour by line y:
+  greys 0x84ec, 0x8000, 0xab54, 0xd400, 0xdd6b, 0xeaff, 0xf2d7, white in 10 px bands from each edge (top: < 11 … < 81; bottom: ≥ 470
+  … ≥ 400); ends when the first line is above top − 3 − 12 × 18, or on a mouse click. Also used by the credits (STR# 129, 103 lines,
+  step 2). Geneva 10 is missing, so the text is blank in this build.
+
+## High scores
+- Two tables (1 player / 2 players), 10 rows of {score, name (≤ 31 chars)}; DefaultPrefs: score 0, name "-". A score qualifies if it
+  is higher than some row (CheckNormScore); SubmitHighNorm inserts it there, shifting the rest down, and marks it current (bold).
+- DrawHighScores (Geneva 9, into the background): column width W = StringWidth("12345678912345678912345678955555"); headings
+  "Name" (128 + 3, 60) and "Score" (W + 135, 60) in white; rows at top 64 + 13i, 11 px high: name cell (128..W + 132) filled
+  RGB (ffff, 08c2, 06a2), score cell (W + 132..2W + 132) RGB (8000, 0, 0), text black at +3, baseline top + 9; rank "i." in white
+  right-aligned to x 126. Two-player table: same, starting 192 + 51.
+- DoHighScores (title SCORES, via HandleScoresProj): Fade(2), PICT 159, tables, cursor, OK button (PICT 129 strip at (508, 479),
+  rising 8 px a frame until top < 417; click → sound 16, frame 2), FadeBack(2); OK, Esc, Return or Enter leaves; then the title
+  is rebuilt (Fade(0), sprites, PICT 7000, hint, FadeBack(0)).
+- AskHighScore(n): if GetScore(n) qualifies: Fade(0), PICT 159, tables, FadeBack(0), OpenScoreDialog, submit, tables and OK as above.
+- OpenScoreDialog: DLOG/DITL 999 (240×240, title "Player 1"/"Player 2"): item 1 button "Yeah Baby!" (81, 208)-(159, 228) with a 3 px
+  rounded default ring (inset −4, radius 15); item 2 PICT 9910 (0, 0)-(240, 128); item 3 name field (5, 171)-(235, 187), its text one
+  of 42 joke names picked with Rand(42), fully selected; item 4 PICT 9911 "NAME:" (90, 135)-(150, 155). Return or Enter = OK. The
+  window frame, field and button are Mac OS's own; the port draws them plainly (addition).
+
+## Practice (playMode 1)
+- CreatePlayers: player 2 is the dummy (cicn 500, 4 frames, speed 4, HandleDummy) at P1's spot (582, 736), info1 0, frame 5,
+  dir 1; it runs in HandleSprites' second pass. DoDamage changes no life. No round time: DoRoundAnimation ends with
+  StartTutorial instead of InitTime. MyRun calls HandleTutorial every frame.
+- HandleDummy: FullLife (200) every frame; frame = info5. Frozen (action1 0x12): frame info4, move, vy += 1, walls → vx × −0.75,
+  KeepSpriteOnScreen, on a surface → vy × −0.5, info2 1, |vy| < 2 → stop; info7-- < 1 → action1 2, action2 3. Otherwise: info2 1,
+  move, vy += 1, walls × −0.75, KeepSpriteOnScreen; in the air → tumbling frames 0–3; on a surface → vy × −0.5, |vy| < 2 → info2 0,
+  stop, frame 0; info2 != 0 → yellow sparks (dir, 2, life 6, speed 3, 0x45, gravity) at left or left + 32, top + 16. info5 = frame.
+- StartTutorial: box (115, 133)-(525, 149), text "Welcome to the Squirrel Kombat Tutorial!", start = TickCount. DrawTutorial: box
+  red-outlined black, text red Geneva 10 at (left + 5, top + 11).
+- HandleTutorial: e = ticks since start; e ≥ 9961 → start again (text kept). Otherwise the text changes every 480 ticks (8 s) from
+  e > 480: life bars, nobody gets hurt, round number, no round time, radar, radar colours, win acorns, points, walking, jump,
+  punch, kick, uppercut, spin kick, flying side kick, jump spin kick, power slam, throw, "read the 'Special Moves' file",
+  "Have fun!". Key names come from the current controls (CharToString); two players get "'A' or 'B'" and their own wording
+  (the two-player walk line swaps "left" and "right": original quirk).

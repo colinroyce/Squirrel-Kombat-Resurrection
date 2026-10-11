@@ -41,8 +41,9 @@ public.
 7. Fonts:
    - Geneva 9 uses "Geneva 9.1", a FontStruct remake under the OFL, with its documented changes
      undone (`assets/fonts/geneva9.json`, `tools/extract/fontstruct_font.py`).
-   - Geneva 10 is still missing. It's used by the round timer, the hint ticker and the practice
-     tutorial, which stay blank until Colin finds a 10 pt source.
+   - Geneva 10 has no free source (the "Geneva 10px" FontStruct remake's licence forbids
+     redistribution and web use). Colin chose a stand-in: 10 pt text is drawn with the Geneva 9
+     glyphs (`fontFor` in `src/gfx.js`, an addition) until a usable 10 pt font turns up.
 8. Loops the original runs uncapped run at 60 fps. Everything else runs at the original's 30 fps
    (2 ticks per frame).
 9. Parts not built yet are **shown but inactive**: they look and animate like the original, but
@@ -53,8 +54,9 @@ public.
     - The original's way is a key code on the character screen: the first six control presses
       left, jump, right, punch, uppercut, spin (A W D S Space Q by default). Colin chose not to
       use it. See docs/SPEC.md "Military Muskrat".
-    - Tournament mode isn't built yet, so for now he can only be unlocked with `?debug`.
-    - When the Tournament is built, a win sets `sel.numChars = 12` (and should be remembered).
+    - The original Tournament can't be won (its 12th place is left empty), so Colin chose to make
+      Military Muskrat the 12th, final opponent. Beating him unlocks him (`UnlockMuskrat` in
+      `src/state.js`, remembered in the browser). `?debug` also unlocks him.
 
 ## Current state: milestone 1 (done)
 
@@ -68,12 +70,15 @@ Working:
 - Since milestone 1 (branch `characters-full-buildout`, awaiting Colin's check):
   - the Field, Tundra, Great Wall and City scenes, each with its hazards and creatures
   - all twelve fighters in ONE ON ONE, with their four specials, projectiles and AI, one file
-    each in `src/fight/` (Military Muskrat needs `?debug` until the Tournament is built)
+    each in `src/fight/` (Military Muskrat is unlocked by winning the Tournament, or with `?debug`)
   - screen shakes (`src/quakes.js`, used by Philbert)
+  - Tournament mode (`src/screens/tournament.js`) with the win screen, and high scores (`src/screens/scores.js`):
+    the name entry after a Tournament and the title's SCORES screen
+  - Practice mode (`src/fight/practice.js`): the training dummy and the timed tutorial messages
 
 Shown but inactive:
-- Title screen: Scores, Quit and Credits.
-- Character select: 2 Players, Practice, Tournament and Two on Two.
+- Title screen: Quit and Credits.
+- Character select: 2 Players and Two on Two.
 - Cheats, the original's alert dialogs, split screen, and player 2's keyboard controls in fights.
 
 Notes:
@@ -145,6 +150,9 @@ Code map (`src/`):
   - `keys.js`
   - `select.js`
   - `scene.js`
+  - `tournament.js` — the Tournament ladder and win screen (`ScrollText`)
+  - `scores.js` — high score tables, the SCORES screen and the name entry
+  - `pauseguide.js` — the pause screen's move guide (an addition)
 - **`fight/`:**
   - `game.js` — `CreatePlayers`, rounds, `Run`/`MyRun`, the key recorder and `CheckMoves1`,
     pause, `HandleDeadPlayer`
@@ -209,8 +217,20 @@ capstone, and a patched deark.
     `src/assets.js`), plus a new N (`assets/added/title-n.png`, built from the original M).
   - These letters are left out of the sprite count that decides when flying kickers appear, so
     the original pacing is kept.
-- **Military Muskrat's unlock**: winning the Tournament (once built) instead of the original's key
-  code; `?debug` also unlocks him (`src/main.js`, `CreateSecretSelector` in `src/screens/select.js`).
+- **Military Muskrat's unlock**: winning the Tournament instead of the original's key code; `?debug`
+  also unlocks him (`UnlockMuskrat` in `src/state.js`, `src/main.js`, `CreateSecretSelector`).
+- **Military Muskrat as the Tournament's 12th, final opponent** (the original leaves that place empty,
+  so its Tournament can't be won): `InitTournament` in `src/screens/tournament.js`.
+- **The high-score name window's frame, field and button**: Mac OS drew these, so they are plain
+  rebuilds; the contents and layout are the game's own DLOG/DITL 999 (`OpenScoreDialog`).
+- **High scores and the Muskrat unlock are saved in the browser** (the original used its
+  preferences file).
+- **10 pt text in the Geneva 9 glyphs** (see decision 7).
+- **The pause move guide** (`src/screens/pauseguide.js`): P shows a Controls page and one page per
+  fighter (combos in the player's current keys, facing right; Military Muskrat hidden until
+  unlocked), flipped with the arrow or walk keys or the on-screen buttons. The original pause only
+  showed PICT 9000. Esc also pauses (the original quit on Esc); quitting a fight is the guide's
+  QUIT button.
 - New art goes in `assets/added/`, with a line in `assets/added/README.md`.
 - Never hand-edit the extracted originals in `assets/`; regenerate them with `tools/extract`.
 - One extraction fix so far: cicn 1128 (the title's blank tile) lists colour value 0 twice. The

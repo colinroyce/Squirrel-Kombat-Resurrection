@@ -2,8 +2,7 @@
 // special-move recorder, pause, and what happens when a fighter dies.
 
 import { Rand, TickCount, setRect, untilTick } from '../mac.js';
-import { drawPicture, sctx } from '../gfx.js';
-import { CheckKey, FlushEvents, GetNextEvent } from '../input.js';
+import { CheckKey } from '../input.js';
 import { DoHandleCamera, GetVisRect, HandleCameras, SetCameraUp, SetCameraUp2, SetRenderOptions } from '../camera.js';
 import {
   DrawSprites, GetSpriteAction1, GetSpriteAction2, GetSpriteDirection, GetSpriteInUse, GetSpriteInfo,
@@ -16,12 +15,14 @@ import { HandleQuakes } from '../quakes.js';
 import { PlaySound } from '../sound.js';
 import {
   AddPointsForLife, AddToDestTime, AddWin, CheckWin, DontDrawLifeBars, GetRoundNum, IncreaseRoundNum,
-  InitLife, InitTime, SetDrawTime,
+  InitLife, InitRoundData, InitTime, SetDrawTime,
 } from '../hud.js';
 import { Fade, FadeBack } from '../fade.js';
 import { CHARS, T } from '../templates.js';
 import { KeepSpriteOnScreen, OnScreen, nextFrame, uncappedFrame } from '../common.js';
-import { GetChosenChar, GetKey, GetNumPlayers, GetPlayMode, GetScene } from '../state.js';
+import { ChooseRandomScene, GetChosenChar, GetKey, GetNumPlayers, GetPlayMode, GetRegistered, GetScene, UnlockMuskrat } from '../state.js';
+import { CheckPlace, DoWinScreen, GetPlace, IncreasePlace, OpenTournamentScreen } from '../screens/tournament.js';
+import { AskHighScore } from '../screens/scores.js';
 import { OnSurface, PartnerOfMe } from './player.js';
 import { HandleEd, HandleSpeedy, NewFireBall, NewPurpleBeam, NewSpin3Ball } from './chars.js';
 import { HandleIce, NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
@@ -34,9 +35,11 @@ import { GeorgeSpecial, HandleOldSquirrel } from './george.js';
 import { HandlePhil, PhilSpecial } from './philbert.js';
 import { HandleSuper, SuperSpecial } from './super.js';
 import { HandleCorpse, NewBats, NewBodyParts, NewBubble, NewDarkBeam } from './corpse.js';
-import { ForestRun, NewSceneSprites } from './forest.js';
+import { ForestRun, InitScene, NewSceneSprites } from './forest.js';
 import { TundraRun } from './tundra.js';
 import { CityRun } from './city.js';
+import { HandleDummy, HandleTutorial, StartTutorial } from './practice.js';
+import { PauseGuide } from '../screens/pauseguide.js';
 
 export const fight = { quit: 0, goToSelection: 0 };
 export const percents = { p0: 0, p1: 0, p2: 0, p4: 0 };
@@ -73,9 +76,12 @@ export function CreatePlayers() {
   SetSpriteFrame(0, 0);
   SetSpriteDirection(0, 0);
   if (GetNumPlayers() === 1 || (GetNumPlayers() === 2 && GetPlayMode() === 0)) {
-    // practice mode's dummy (type 500) is not part of this build yet
-    const c1 = GetChosenChar(1);
-    NewSpriteFromCICN(CHARS[c1], r1, PROCS[c1]);
+    if (GetPlayMode() === 1) {
+      NewSpriteFromCICN(T.dummy, r1, HandleDummy); // practice: the training dummy
+    } else {
+      const c1 = GetChosenChar(1);
+      NewSpriteFromCICN(CHARS[c1], r1, PROCS[c1]);
+    }
     SetSpriteInfo(1, 1, 0);
     SetSpriteFrame(1, 5);
     SetSpriteDirection(1, 1);
@@ -108,11 +114,13 @@ export async function DoRoundAnimation() {
     await uncappedFrame();
   }
   if (GetPlayMode() !== 1) InitTime();
+  else StartTutorial();
 }
 
 // ---- Run --------------------------------------------------------------------------------------
 
 function MyRun() {
+  if (GetPlayMode() === 1) HandleTutorial();
   if (GetScene() === 0) ForestRun();
   if (GetScene() === 2) TundraRun();
   if (GetScene() === 4) CityRun();
@@ -297,25 +305,20 @@ function CheckMoves1() {
 
 // ---- keyboard ---------------------------------------------------------------------------------
 
-async function WaitPause() {
-  FlushEvents();
-  for (;;) {
-    const e = GetNextEvent();
-    if (e && ((e.what === 3 && (CheckKey(0x71) || CheckKey(0x23))) || e.what === 1)) break;
-    await untilTick(TickCount() + 1);
-  }
-  FlushEvents();
-  while (CheckKey(0x71) || CheckKey(0x23)) await untilTick(TickCount() + 1);
-}
-
 async function CheckKeyDown() {
   const r0 = GetSpriteRect(0);
   // Cmd-Q quits the original application; there is nothing to quit to in a browser.
-  if (CheckKey(0x35)) { Quit(); SetGoToSelection(1); }
-  if (CheckKey(0x71) || CheckKey(0x23)) {
-    drawPicture(sctx, 9000, setRect({}, 0xf0, 0xda, 400, 0x107));
+  // The original quits the fight on Esc. Not in the original: Esc pauses like P, and quitting is
+  // the QUIT button on the pause guide (Colin's request).
+  if (CheckKey(0x35) || CheckKey(0x71) || CheckKey(0x23)) {
+    // The original draws PICT 9000 at (240, 218) and waits (WaitPause). Not in the original:
+    // the pause shows the move guide instead (src/screens/pauseguide.js).
     const t = TickCount();
-    await WaitPause();
+    if (await PauseGuide() === 'quit') {
+      Quit();
+      SetGoToSelection(1);
+      return;
+    }
     AddToDestTime(TickCount() - t);
   }
   const a2 = () => GetSpriteAction2(0);
@@ -446,7 +449,55 @@ export async function HandleDeadPlayer(s) {
       DontDrawLifeBars();
       Quit();
       SetGoToSelection(1);
+    } else if (GetPlayMode() === 2) {
+      if (GetRegistered() === 0 && GetPlace() > 4) {
+        DontDrawLifeBars();
+        await AskHighScore(0);
+        if (GetNumPlayers() === 2) await AskHighScore(1);
+        Quit();
+        SetGoToSelection(1);
+      } else if ((GetNumPlayers() === 1 && s.num === 0) || (GetNumPlayers() === 2 && (s.num === 1 || s.num === 0))) {
+        // A human lost: the Tournament is over.
+        DontDrawLifeBars();
+        await AskHighScore(0);
+        if (GetNumPlayers() === 2) await AskHighScore(1);
+        Quit();
+        SetGoToSelection(1);
+      } else {
+        IncreasePlace();
+        if (!CheckPlace()) { // the next opponent
+          await Fade(0);
+          await OpenTournamentScreen();
+          await Fade(0);
+          SetDrawTime(0);
+          IncreaseRoundNum();
+          SetRenderOptions(1, 1);
+          ChooseRandomScene();
+          InitScene();
+          KillAllSprites();
+          CreatePlayers();
+          NewSceneSprites();
+          SetCameraUp(0, GetSpritePicID(0), 32);
+          if (GetNumPlayers() === 2) SetCameraUp2(1, GetSpritePicID(1), 32);
+          if (GetNumPlayers() === 1) SetRenderOptions(1, 0);
+          DoHandleCamera();
+          HandleCameras();
+          InitLife();
+          InitRoundData();
+          DrawSprites();
+          InitKeyRecorder();
+          await DoRoundAnimation();
+          await Run();
+        } else { // won the Tournament
+          UnlockMuskrat(); // Not in the original (see UnlockMuskrat in state.js)
+          await Fade(1);
+          await DoWinScreen();
+          await AskHighScore(0);
+          if (GetNumPlayers() === 2) await AskHighScore(1);
+          Quit();
+          SetGoToSelection(1);
+        }
+      }
     }
-    // Tournament endings (ladder, win screen, high scores) are not part of this build yet.
   }
 }

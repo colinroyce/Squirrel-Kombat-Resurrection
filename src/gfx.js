@@ -183,8 +183,11 @@ export function copyBits(ctx, src, sr, dr) {
 
 // ---- text (Geneva bitmap strikes, drawn srcOr in the foreground colour) ----------------------
 
+// Not in the original: Geneva 10 has no free source yet, so 10 pt text (round timer, hint
+// ticker, practice tutorial, win screen and credits) is drawn with the Geneva 9 glyphs instead
+// (Colin's choice) until a real 10 pt font is found.
 function fontFor(size) {
-  return assets.fonts[size] || null;
+  return assets.fonts[size] || (size === 10 ? assets.fonts[9] : null) || null;
 }
 
 // Width of a string. If a size is missing, the 9 pt metrics stand in so text layout logic

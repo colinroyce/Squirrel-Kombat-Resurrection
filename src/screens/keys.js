@@ -24,7 +24,7 @@ const NAMES = {
 const ks = { done: 0, editing: -1, rects: Array.from({ length: 14 }, () => ({ top: 0, left: 0, bottom: 0, right: 0 })) };
 
 // CharToString2: the key's name, or the character stored with it.
-function keyName(slot) {
+export function keyName(slot) {
   const [ch, code] = prefs.keys[slot];
   return NAMES[code] !== undefined ? NAMES[code] : ch;
 }

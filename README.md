@@ -27,12 +27,18 @@ Since then:
   snowballs), Great Wall (towers and pits) and City (ledges and passing flocks of birds).
 - All twelve fighters are playable in One on One, each with their four special moves and the
   CPU playing them as the original does.
+- Tournament mode: climb the ladder of fighters, then the win screen and the high score table.
+  The SCORES button on the title screen shows the tables.
+- Pausing (P) shows a move guide: the controls and every fighter's special moves in your own keys,
+  one page each, flipped with the arrow keys. (An addition: in 1999 the moves were in a separate
+  text file.)
+- Practice mode: hit the training dummy (nobody gets hurt) while tutorial tips cycle above.
 
 Everything else on these screens is shown and animates as in the original, but does nothing when
 clicked yet:
 
-- Scores, Quit, and credits on the title screen
-- 2 Players, Practice, Tournament, and Two on Two
+- Quit and credits on the title screen
+- 2 Players and Two on Two
 - Cheat codes, alert dialogs, and split screen
 
 The character screen opens in Tournament mode, as the original does, so click **ONE ON ONE**
@@ -44,8 +50,12 @@ first. The CPU picks its fighter at random.
   wobble like the original's and are brightened copies of the original letter tiles, so the new
   line stands out. The original has no N, so that one is new art built from the original M (see
   `assets/added/`).
-- Military Muskrat is unlocked by winning the Tournament (not built yet) rather than by the
-  original's secret key code. For testing, adding `?debug` to the address unlocks him.
+- Military Muskrat is unlocked by winning the Tournament rather than by the original's secret
+  key code. For testing, adding `?debug` to the address unlocks him.
+- The original Tournament can't be won (its last place on the ladder is left empty), so Military
+  Muskrat is the final opponent there.
+- The high-score name window is a plain rebuild: in 1999 Mac OS drew its frame and button. Its
+  pictures, text and layout are the original's. High scores are saved in the browser.
 
 ## Controls
 
@@ -66,7 +76,8 @@ Other keys:
 - Return or Enter starts from the title screen and confirms on every menu. Space also starts the
   scene.
 - On the character screen, Esc cancels and the walk keys change fighter.
-- During a fight, P (or F15) pauses and Esc goes back to character select.
+- During a fight, P or Esc pauses and shows the move guide. To leave the fight, click QUIT in the
+  top left of the pause screen. (An addition: in the original, Esc quit straight away.)
 
 Special moves, from the original "Special Moves" sheet (`<` back, `>` forward, `p` punch, `k` kick,
 `u` uppercut, `s` spin kick, `^` jump). Tap the keys: holding one down counts once.
@@ -95,8 +106,8 @@ The original draws text in the Mac's Geneva bitmap font, which can't be redistri
 - **9 pt text** (scores, the Keys screen) uses Geneva 9.1, a FontStruct remake under the OFL. Its
   documented changes from the real font are undone. See `tools/extract/fontstruct_font.py` and
   `assets/fonts/`.
-- **10 pt text** (the round timer, the hint ticker, and the practice tutorial) is blank until a
-  10 pt source is found.
+- **10 pt text** (the round timer, the hint ticker, the practice tutorial, the win screen) is
+  drawn with the Geneva 9 letters as a stand-in, until a freely usable 10 pt Geneva is found.
 
 ## Repository
 

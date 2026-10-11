@@ -1,6 +1,7 @@
 // Preferences and the selection state shared between screens.
 
 import { SetWantsMusic, SetWantsSound, StopMusic, PlayMusic } from './sound.js';
+import { Rand } from './mac.js';
 
 // Key slots: P1 left, jump, right, punch, kick, uppercut, spin; then the same for P2.
 // Each entry is [character shown on the Keys screen, Mac virtual key code] (DefaultKeys).
@@ -22,6 +23,7 @@ export function loadPrefs() {
   } catch (e) { /* no storage: defaults */ }
   SetWantsSound(prefs.sound);
   SetWantsMusic(prefs.music);
+  if (prefs.muskrat) sel.numChars = 12; // Not in the original: see UnlockMuskrat
 }
 
 export function savePrefs() {
@@ -70,3 +72,17 @@ export const GetScene = () => sel.scene;
 // Fighters and scenes built so far; the rest of the game is shown but inactive.
 export const STAGED_CHARS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0xb];
 export const STAGED_SCENES = [0, 1, 2, 3, 4];
+
+// ChooseRandomScene: the Tournament's scene for each fight (unregistered builds only Forest/Field).
+export function ChooseRandomScene() {
+  if (GetRegistered() === 0) sel.scene = Rand(2) === 0 ? 1 : 0;
+  else sel.scene = Rand(5);
+}
+
+// Not in the original: Military Muskrat is unlocked by winning the Tournament (Colin's choice,
+// instead of the original's key code), and the browser remembers it.
+export function UnlockMuskrat() {
+  prefs.muskrat = 1;
+  sel.numChars = 12;
+  savePrefs();
+}
