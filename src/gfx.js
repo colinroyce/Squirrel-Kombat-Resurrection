@@ -65,6 +65,10 @@ const OLD_COLORS = {
   0x199: [0x0000, 0x0000, 0xd400], // blueColor
 };
 
+// Whether `c` is one of the eight constants above. The original also passes other values (the
+// secret selector's sparks use 2); what Color QuickDraw shows for those is not recovered yet.
+export const isOldColor = (c) => c in OLD_COLORS;
+
 export function foreColor(c) {
   const v = OLD_COLORS[c];
   return mapRGB16(v[0], v[1], v[2]);

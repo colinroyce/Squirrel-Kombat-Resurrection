@@ -11,12 +11,12 @@ import {
   DrawSprites, GetSpritePicID, HandleSprites, KillAllSprites, KillSpriteByNumber, NewSpriteFromCICN,
   NewSpriteFromCICNSpecial, NewSpriteFromPICT, SetSpriteAction1, SetSpriteFrame, SetSpriteRect,
 } from '../sprites.js';
-import { HandleSparks } from '../sparks.js';
+import { HandleSparks, MakeSparks } from '../sparks.js';
 import { PlaySound } from '../sound.js';
 import { BlankOutTutorial, DontDrawLifeBars, InitLife, InitRoundData, InitScores, SetDrawTime } from '../hud.js';
 import { Fade, FadeBack } from '../fade.js';
 import { T } from '../templates.js';
-import { KillSpriteControls, NewCursorSprite, nextFrame } from '../common.js';
+import { DoNothing, KillSpriteControls, NewCursorSprite, nextFrame } from '../common.js';
 import { GetDiffPref, GetKey, GetNumPlayers, GetPlayMode, STAGED_CHARS, SetPlayMode, sel } from '../state.js';
 import { OpenSceneSelector } from './scene.js';
 import { DoTitle } from './title.js';
@@ -66,6 +66,7 @@ export async function OpenSelection() {
   ChooseChar(1, sel.chosen[1]);
   DrawSprites();
   S.done = 0;
+  if (sel.numChars === 12) CreateSecretSelector(S.charRects[11]);
   await FadeBack(0);
   PlaySound(15);
   if (!CheckChars(sel.chosen[0])) ChooseChar(0, 0);
@@ -80,8 +81,9 @@ export async function OpenSelection() {
     SetRenderOptions(1, 1);
     KillAllSprites();
     if (GetNumPlayers() === 1 && GetPlayMode() === 0) {
-      // SetCharRand(1): a random opponent (from the fighters built so far)
-      sel.chosen[1] = STAGED_CHARS[Rand(STAGED_CHARS.length)];
+      // SetCharRand(1): Rand(numChars), limited to the fighters built so far
+      const pool = STAGED_CHARS.filter((c) => c < sel.numChars);
+      sel.chosen[1] = pool[Rand(pool.length)];
     }
     CreatePlayers();
     SetCameraUp(0, GetSpritePicID(0), 32);
@@ -171,8 +173,22 @@ function CheckSelectionKeyDown() {
       if (CheckKey(GetKey(7))) cycle(1, -1);
       if (CheckKey(GetKey(9))) cycle(1, 1);
     }
-    // The secret-character key code is not part of this build yet.
+    // The original's secret-character key code (left, jump, right, punch, uppercut, spin as the
+    // first six keys) is left out on purpose: Military Muskrat is unlocked by winning the
+    // Tournament instead (an addition, see CreateSecretSelector).
   }
+}
+
+// CreateSecretSelector: Military Muskrat's portrait (preview template, frame 11) in the 12th
+// spot, in slot 50, with a burst of sparks. The sparks use colour 2 and are made while the
+// camera is off (OffCamera −5000), so MakeSparks drops them as off screen, as in the original.
+// Not in the original: the original shows this after the secret key code; here it shows once
+// Military Muskrat is unlocked by winning the Tournament (not built yet), or with ?debug.
+function CreateSecretSelector(r) {
+  for (const d of [3, 2, 0, 1]) MakeSparks(r.left + 0x10, r.top + 0x10, d, 10, 0x14, 7, 2, 0, 2, 2);
+  T.previewP1.frame = 0xb;
+  NewSpriteFromCICNSpecial(T.previewP1, r, DoNothing, 0x32);
+  T.previewP1.frame = 0;
 }
 
 function NewSelectionScreenSprites() {

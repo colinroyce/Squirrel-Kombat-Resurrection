@@ -185,6 +185,36 @@ vy −10, action2 3. Then HandlePlayer2; KeepSpriteOnScreen always. No Ice-speci
   NewIceColumn2 (32 px higher, info9 + 1); then counts info7 to 50 and kills all type 336 of its group. Callers pass the
   fighter's slot as n, so player 1's column is 7 pieces and slot 1's is 6 (original quirk). Scenery only (not a platform).
 
+## Military Muskrat (HandleMuskrat, character 11)
+Same prologue. Own state 0xf (air strike, one frame): action2 = 2; fewer than 6 air bombs (type 1073) → NewAirBombs(opp rect,
+info1, num). Then HandlePlayer2; KeepSpriteOnScreen always.
+- Keys (CheckMoves1, in order): (3,0,4,2)/(3,2,4,0) mine; (2,2,5,6)/(0,0,5,6) grenades; (0,0,3,4,2)/(2,2,3,4,0) air strike
+  (action2 0xf); (6,0,0,1,2)/(6,2,2,1,0) tracker. Each needs action2 != 5. DoSpecialMove 0–3 = mine, grenades, air
+  strike, tracker (all skipped while action2 == 5).
+- Unlock: in the original, a registered build on the character screen records left/jump/right/punch/uppercut/spin presses
+  (RecordSKey, 6-entry list, consecutive repeats dropped, restarts after 6) and, when they are exactly 0,1,2,3,5,6
+  (left, jump, right, punch, uppercut, spin) with numChars 11, sets numChars 12 and calls CreateSecretSelector: 4 × MakeSparks
+  (rect + 16, d 3/2/0/1, 10, life 20, speed 7, **colour 2**, 2×2) and the preview template (cicn 5000) at frame 11 ("?") in
+  the 12th rect, slot 50, DoNothing. OpenSelection recreates it while numChars == 12. The port leaves the key code out
+  (Colin's choice: unlocked by winning the Tournament, an addition); `?debug` unlocks it for testing. ForeColor(2) on
+  Color QuickDraw is not recovered, so those sparks are not drawn yet.
+- NewExplosion(rect, opp, num) (cicn 572, 11 frames, delay 2, speed 6): vx = Rand(12) − 6, then vy = Rand(6) − 12 (template);
+  PlaySound(17). HandleExplosion: move, vy += 1, anim; frame ≥ 11 → dies; touching opp (2,2,2,2) and info7 == 0:
+  DoDamage(opp, 15, num), path (h + Rand(15) − 7, v − 12), opp dir 1, frame 0x22 + action2 5 (unless dead/dummy), info2 0,
+  info7 = 1. Shared with Mech.
+- NewProxMine (cicn 1068, 10×8): only if fewer than 3; rect inset (11, 12). HandleProxMine: enlarged by 50 px for GetOpp;
+  falls (vy += 1, no cap), vy = 0 on a surface or bottom > 768; KeepSpriteOnScreen; opponent within 50 px (enlarged rect,
+  no insets) → NewExplosion at the 32×32 rect, dies.
+- NewGrenades (cicn 1069, 4 frames, 13×13, speed 9): only if fewer than 5 (checked once, so up to 8); rect inset 10, then
+  left − 1, top − 1; 4 × { vx = dir 0 ? Rand(4) + 9 : −Rand(4) − 9; vy = −5 − Rand(7) }. HandleGrenade: move, vy += 1, anim
+  0–3; on a surface / bottom > 768 / top < 0 → vy = trunc(vy × −0.75); right > 1024 or left < 0 → dies; KeepSpriteOnScreen;
+  touching opp (no insets) → explosion at rect inset −10 with left + 1, top + 1; dies.
+- NewAirBombs (cicn 1073, speed 16): rect (opp.left, 0)-(opp.right, 32) moved −96 px; 5 bombs, each next one +48 px across
+  and 8 px higher. HandleAirBomb: move, vy += 1 (max 20); touching opp (2,2,2,2) → explosion, dies; bottom > 768 → dies.
+- NewTracker (cicn 1074, 2 frames, 26×22, speed 8, info4 200): only if fewer than 2; rect inset (3, 5). HandleTracker:
+  info4--; at 0 → 4 cyan spark bursts and dies (still finishes the frame); move; dir = vx < 1; frame = dir; homes like
+  HandleBird (vx ±8, vy clamps); off screen → dies; touching opp (2,2,2,2) → dies, explosion at rect inset (−3, −5).
+
 ## Projectiles
 Hit test is DetectCollision(a, b, insets…) — rects shrunk by the given insets before intersecting.
 Standard "hit" = DoDamage, opp action2 5 unless dead, path += knockback, set dir and frame unless dead or picID 500.

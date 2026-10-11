@@ -45,13 +45,12 @@ public.
    clicking them does nothing.
 10. Blood defaults to **yellow**, as the original's `DefaultPrefs` sets it. Red blood and the
     dripping cursor appear only with Options → Blood → ON. This matches the original, so leave it.
-11. **Military Muskrat: unresolved, ask Colin before building him.**
-    - Colin's instruction: he "is unlocked after you beat all the other squirrels".
-    - The binary does it differently. In `CheckSelectionKeyDown`, a registered build sets
-      `numChars` from 11 to 12 and calls `CreateSecretSelector` when six recorded values match
-      0, 1, 2, 3, 5, 6. If those are Mac key codes, that's A S D F G Z; verify where that ring is
-      filled.
-    - Tell him the difference and let him choose.
+11. **Military Muskrat is unlocked by winning the Tournament** (Colin's choice, an addition).
+    - The original's way is a key code on the character screen: the first six control presses
+      left, jump, right, punch, uppercut, spin (A W D S Space Q by default). Colin chose not to
+      use it. See docs/SPEC.md "Military Muskrat".
+    - Tournament mode isn't built yet, so for now he can only be unlocked with `?debug`.
+    - When the Tournament is built, a win sets `sel.numChars = 12` (and should be remembered).
 
 ## Current state: milestone 1 (done)
 
@@ -82,7 +81,7 @@ Notes:
 Make all of these fully playable in ONE ON ONE mode (1 player vs the CPU), faithful to the binary:
 
 - **Fighters:** ICE (done, awaiting Colin's check), INVISIBLE, NINJA, MECH, KATHY, GEORGE, PHILBERT, SUPER SQUIRREL, CORPSE,
-  plus MILITARY MUSKRAT once the unlock rule is settled. ED and SPEEDY are done.
+  plus MILITARY MUSKRAT (done, awaiting Colin's check). ED and SPEEDY are done.
 - **Scenes:** all five are done (Field, Tundra, Great Wall and City added after milestone 1; awaiting
   Colin's check).
 
@@ -173,6 +172,7 @@ Code map (`src/`):
   - `tundra.js` — the Tundra's snow and snowballs (`TundraRun`)
   - `city.js` — the City's bird flocks (`CityRun`)
   - `ice.js` — Ice: `HandleIce`, Ice Blast, Ice Fist, Ice Column, the ice cube
+  - `muskrat.js` — Military Muskrat: mine, grenades, air strike, tracker, and `NewExplosion`
 
 ## Reverse-engineering files (not in git)
 
@@ -225,6 +225,8 @@ capstone, and a patched deark.
     `src/assets.js`), plus a new N (`assets/added/title-n.png`, built from the original M).
   - These letters are left out of the sprite count that decides when flying kickers appear, so
     the original pacing is kept.
+- **Military Muskrat's unlock**: winning the Tournament (once built) instead of the original's key
+  code; `?debug` also unlocks him (`src/main.js`, `CreateSecretSelector` in `src/screens/select.js`).
 - New art goes in `assets/added/`, with a line in `assets/added/README.md`.
 - Never hand-edit the extracted originals in `assets/`; regenerate them with `tools/extract`.
 - One extraction fix so far: cicn 1128 (the title's blank tile) lists colour value 0 twice. The
@@ -234,7 +236,8 @@ capstone, and a patched deark.
 
 1. Run `python3 -m http.server 8000` in the repo root, open http://localhost:8000/, and click to
    start (browsers need a click before playing sound).
-2. Adding `?debug` to the address exposes `window.__sk = {hud, gSprites, sel}`.
+2. Adding `?debug` to the address exposes `window.__sk = {hud, gSprites, sel}` and unlocks
+   Military Muskrat.
 3. To reach a fight, click these spots (in game coordinates):
    1. PLAY at (80,418)
    2. ONE ON ONE at (558,32)

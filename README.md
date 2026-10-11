@@ -41,6 +41,8 @@ first. The CPU picks its fighter at random from Ed and Speedy.
   wobble like the original's and are brightened copies of the original letter tiles, so the new
   line stands out. The original has no N, so that one is new art built from the original M (see
   `assets/added/`).
+- Military Muskrat is unlocked by winning the Tournament (not built yet) rather than by the
+  original's secret key code. For testing, adding `?debug` to the address unlocks him.
 
 ## Controls
 

@@ -16,6 +16,7 @@ import { KeepSpriteOnScreen, OnScreen } from '../common.js';
 import { GetOpp, HandlePlayer, HandlePlayer2, OnSurface } from './player.js';
 import { ClearPattern1, HandleDeadPlayer, percents } from './game.js';
 import { NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
+import { NewGrenades, NewProxMine, NewTracker } from './muskrat.js';
 
 // ---- shared ----------------------------------------------------------------------------------
 
@@ -344,6 +345,12 @@ export function DoSpecialMove(n, ch, move) {
     } else if (move === 3) {
       if (a2 !== 5) NewIceBlast2(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
     }
+  } else if (ch === 0xb) {
+    if (a2 === 5) return;
+    if (move === 0) NewProxMine(r, GetSpriteInfo(n, 1), n);
+    else if (move === 1) NewGrenades(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    else if (move === 2) SetSpriteAction2(n, 0xf);
+    else if (move === 3) NewTracker(r, GetSpriteInfo(n, 1), n);
   }
 }
 

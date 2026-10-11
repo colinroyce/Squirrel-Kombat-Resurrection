@@ -1,7 +1,7 @@
 // Sparks (blood, teleport and fireball bursts): 250 slots of tiny coloured rectangles.
 
 import { Rand } from './mac.js';
-import { bctx, fillRect, foreColor, worldRect } from './gfx.js';
+import { bctx, fillRect, foreColor, isOldColor, worldRect } from './gfx.js';
 import { PointVisible, PointVisible2, view } from './camera.js';
 
 const sparks = Array.from({ length: 250 }, () => ({
@@ -65,6 +65,7 @@ export function HandleSparks() {
 export function DrawSparks1() {
   for (const s of sparks) {
     if (!s.active) continue;
+    if (!isOldColor(s.color)) continue; // unresolved colour (see isOldColor): not drawn for now
     const h = s.x - view.left, v = s.y - view.top;
     fillRect(bctx, { left: h, top: v, right: h + s.w, bottom: v + s.h }, foreColor(s.color));
   }

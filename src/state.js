@@ -68,5 +68,5 @@ export const GetSuperBlood = () => sel.superBlood;
 export const GetScene = () => sel.scene;
 
 // Fighters and scenes built so far; the rest of the game is shown but inactive.
-export const STAGED_CHARS = [0, 1, 2];
+export const STAGED_CHARS = [0, 1, 2, 0xb];
 export const STAGED_SCENES = [0, 1, 2, 3, 4];

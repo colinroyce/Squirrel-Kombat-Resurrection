@@ -101,6 +101,11 @@ export const T = {
   iceFist: init(334, 2, 2, 32, 32, 32),
   iceColumn: init(336, 1, 2, 32, 32, 32, { action2: 0 }),
   iceBlast2: init(337, 2, 2, 32, 32, 14),
+  explosion: init(572, 11, 2, 32, 32, 6, { info7: 0 }),
+  proxMine: init(1068, 1, 2, 10, 8, 5),
+  grenade: init(1069, 4, 2, 13, 13, 9),
+  airBomb: init(1073, 1, 2, 32, 32, 16),
+  tracker: init(1074, 2, 2, 26, 22, 8, { info4: 200 }),
   // scenes
   deathAcorn: init(591, 1, 2, 20, 29, 18, { action2: 0 }),
   eye: init(1076, 6, 4, 24, 16, 0, { action1: 0 }),

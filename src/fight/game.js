@@ -24,6 +24,7 @@ import { GetChosenChar, GetKey, GetNumPlayers, GetPlayMode, GetScene } from '../
 import { OnSurface, PartnerOfMe } from './player.js';
 import { HandleEd, HandleSpeedy, NewFireBall, NewPurpleBeam, NewSpin3Ball } from './chars.js';
 import { HandleIce, NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
+import { HandleMuskrat, NewGrenades, NewProxMine, NewTracker } from './muskrat.js';
 import { ForestRun, NewSceneSprites } from './forest.js';
 import { TundraRun } from './tundra.js';
 import { CityRun } from './city.js';
@@ -41,7 +42,9 @@ export function SetPercents(a, b, c, d) {
 export function Quit() { fight.quit = 1; }
 export function SetGoToSelection(v) { fight.goToSelection = v; }
 
+// Indexed by character; fighters not built yet are left empty.
 const PROCS = [HandleEd, HandleSpeedy, HandleIce];
+PROCS[0xb] = HandleMuskrat;
 
 // ---- players -------------------------------------------------------------------------------
 
@@ -198,6 +201,20 @@ function CheckMoves1() {
     } else if (CheckPattern1(3, 6, 1)) {
       ClearPattern1();
       if (a2() !== 5) NewIceBlast2(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    }
+  } else if (ch === 0xb) {
+    if (CheckPattern1(3, 0, 4, 2) || CheckPattern1(3, 2, 4, 0)) {
+      ClearPattern1();
+      if (a2() !== 5) NewProxMine(r, GetSpriteInfo(0, 1), 0);
+    } else if (CheckPattern1(2, 2, 5, 6) || CheckPattern1(0, 0, 5, 6)) {
+      ClearPattern1();
+      if (a2() !== 5) NewGrenades(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    } else if (CheckPattern1(0, 0, 3, 4, 2) || CheckPattern1(2, 2, 3, 4, 0)) {
+      ClearPattern1();
+      if (a2() !== 5) SetSpriteAction2(0, 0xf);
+    } else if (CheckPattern1(6, 0, 0, 1, 2) || CheckPattern1(6, 2, 2, 1, 0)) {
+      ClearPattern1();
+      if (a2() !== 5) NewTracker(r, GetSpriteInfo(0, 1), 0);
     }
   }
 }
