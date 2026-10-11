@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+
+# Reverse-engineering work files and reference material (kept out of the public repo; see CLAUDE.md)
+/re/
+/reference/
