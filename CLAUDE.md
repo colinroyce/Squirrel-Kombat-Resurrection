@@ -61,56 +61,35 @@ Working:
   - projectiles and all four special moves for both fighters
   - Forest hazards: the log elevator, tree eyes, leaves, death acorns, and nests with birds
   - pause, and back to character select after a match
-- Since milestone 1: Field, Tundra, Great Wall and City, each with its hazards and creatures.
+- Since milestone 1 (branch `characters-full-buildout`, awaiting Colin's check):
+  - the Field, Tundra, Great Wall and City scenes, each with its hazards and creatures
+  - all twelve fighters in ONE ON ONE, with their four specials, projectiles and AI, one file
+    each in `src/fight/` (Military Muskrat needs `?debug` until the Tournament is built)
+  - screen shakes (`src/quakes.js`, used by Philbert)
 
 Shown but inactive:
 - Title screen: Scores, Quit and Credits.
 - Character select: 2 Players, Practice, Tournament and Two on Two.
-- The other ten fighters plus the Muskrat.
 - Cheats, the original's alert dialogs, split screen, and player 2's keyboard controls in fights.
 
 Notes:
 - The character screen opens in TOURNAMENT mode, as the original does, so click ONE ON ONE first.
-- The CPU picks its fighter at random from the built ones (`STAGED_CHARS` in `src/state.js`).
-  The original uses `Rand(numChars)`.
+- The CPU picks its fighter at random from the built ones below `numChars` (`STAGED_CHARS` in
+  `src/state.js`); the original uses `Rand(numChars)`. All twelve are built, so this now matches.
 - `GetRegistered()` returns 1: we behave as the registered version, so all characters and
   scenes are allowed.
+- Open questions: the spark colours 2 (secret selector) and 6 (Corpse's bats appearing) aren't
+  standard QuickDraw colours; what ForeColor shows for them isn't recovered, so those sparks
+  aren't drawn yet (`isOldColor` in `src/gfx.js`).
 
-## NEXT GOAL: every fighter and every scene playable one-on-one
+## Where each fighter lives
 
-Make all of these fully playable in ONE ON ONE mode (1 player vs the CPU), faithful to the binary:
-
-- **Fighters:** ICE (done, awaiting Colin's check), INVISIBLE, NINJA, MECH, KATHY, GEORGE, PHILBERT, SUPER SQUIRREL, CORPSE,
-  plus MILITARY MUSKRAT (done, awaiting Colin's check). ED and SPEEDY are done.
-- **Scenes:** all five are done (Field, Tundra, Great Wall and City added after milestone 1; awaiting
-  Colin's check).
-
-Each fighter needs:
-- its `Handle<Name>` procedure
-- special-move inputs (`CheckMoves1` in `src/fight/game.js`), with the original patterns
-- `DoSpecialMove` and the `SPECIALS` table entries in `src/fight/chars.js`
-- projectiles and effects
-- the AI's special-move choices (`EvalSpecialMove`, `HandleAI`)
-- every per-character case in `HandlePlayer`, `HandlePlayer2` and `CheckKeyDown`, e.g. character
-  9 (Super Squirrel) and character 4 (Ninja)
-- an entry in `PROCS` in `CreatePlayers`
-- the death sequence
-- the character-select preview
-
-Each scene needs:
-- the `InitScene` background and platforms (see docs/SPEC.md "Scenes"; the platform rects are
-  already recovered)
-- `NewSceneSprites`
-- its per-frame hazards, like `ForestRun`, called from `MyRun`
-- any special surfaces handled in `OnSurface`
-
-Then widen `STAGED_CHARS` in `src/state.js` (`STAGED_SCENES` already holds all five), and the CPU pick, to the full
-roster (`Rand(numChars)`).
-
-Work one fighter at a time and have Colin check each before moving on; agree the order with him
-first. The original move list for every fighter is in `assets/text.json` under "Special Moves",
-taken from the archive's own help file. `src/fight/chars.js` already holds Ed and Speedy; with
-ten more fighters, per-character files may be cleaner.
+- Ed, Speedy, the AI (`HandleAI`) and `DoSpecialMove` for everyone: `src/fight/chars.js`.
+- Everyone else: `src/fight/<name>.js` (ice, invisible, ninja, mech, kathy, george, philbert,
+  super, corpse, muskrat), each with `Handle<Name>`, a `<Name>Special(n, move)` used by both
+  `CheckMoves1` (player 1) and `DoSpecialMove` (CPU) where their steps match, and the projectiles.
+- Key patterns: `CheckMoves1` in `src/fight/game.js`. Templates: `T` in `src/templates.js`.
+- The behaviour of every fighter is written up in docs/SPEC.md, one section each.
 
 ## How the port is written
 
@@ -153,6 +132,7 @@ Code map (`src/`):
   - `sparks.js`
   - `hud.js` — life bars, scores, rounds, timer, radar, hint
   - `fade.js`
+  - `quakes.js` — screen shakes
   - `common.js` — cursor, screen transitions, `nextFrame`
 - **`screens/`:**
   - `splash.js` — the Monkey Farm splash and the loading screen
@@ -171,8 +151,8 @@ Code map (`src/`):
   - `field.js` — the Field's butterflies
   - `tundra.js` — the Tundra's snow and snowballs (`TundraRun`)
   - `city.js` — the City's bird flocks (`CityRun`)
-  - `ice.js` — Ice: `HandleIce`, Ice Blast, Ice Fist, Ice Column, the ice cube
-  - `muskrat.js` — Military Muskrat: mine, grenades, air strike, tracker, and `NewExplosion`
+  - `ice.js`, `invisible.js`, `ninja.js`, `mech.js`, `kathy.js`, `george.js`, `philbert.js`,
+    `super.js`, `corpse.js`, `muskrat.js` — one fighter each (`NewExplosion` is in muskrat.js)
 
 ## Reverse-engineering files (not in git)
 

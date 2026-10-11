@@ -79,6 +79,7 @@ export const GetSpritePathH = (n) => gSprites[n].vx;
 export const GetSpritePathV = (n) => gSprites[n].vy;
 export const SetSpritePath = (n, h, v) => { gSprites[n].vx = h; gSprites[n].vy = v; };
 export const MoveSprite = (n, dh, dv) => offsetRect(gSprites[n].rect, dh, dv);
+export const SetSpriteDoDraw = (n, v) => { gSprites[n].doDraw = v; };
 export const GetSpritePicID = (n) => gSprites[n].type;
 export const GetSpriteInUse = (n) => gSprites[n].inUse;
 export const SetSpriteProcPtr = (n, p) => { gSprites[n].proc = p; };

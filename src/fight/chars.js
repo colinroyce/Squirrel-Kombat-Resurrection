@@ -17,6 +17,14 @@ import { GetOpp, HandlePlayer, HandlePlayer2, OnSurface } from './player.js';
 import { ClearPattern1, HandleDeadPlayer, percents } from './game.js';
 import { NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
 import { NewGrenades, NewProxMine, NewTracker } from './muskrat.js';
+import { NewInvBoxGlove, NewInvFireBall, NewInvIceBall } from './invisible.js';
+import { MechSpecial } from './mech.js';
+import { NinjaSpecial } from './ninja.js';
+import { KathySpecial } from './kathy.js';
+import { GeorgeSpecial } from './george.js';
+import { PhilSpecial } from './philbert.js';
+import { SuperSpecial } from './super.js';
+import { NewBats, NewBodyParts, NewBubble, NewDarkBeam } from './corpse.js';
 
 // ---- shared ----------------------------------------------------------------------------------
 
@@ -290,7 +298,7 @@ export function NewFireBall(r, oppIndex, num, dir) {
   NewSpriteFromCICN(T.fireBall, r, HandleFireBall);
 }
 
-function HandleFireBall(s) {
+export function HandleFireBall(s) {
   const opp = GetOpp(s.info[1], s.rect, s.info[2]);
   const o = GetSpriteRect(opp);
   s.frame = s.dir === 0 ? 0 : 1;
@@ -345,6 +353,35 @@ export function DoSpecialMove(n, ch, move) {
     } else if (move === 3) {
       if (a2 !== 5) NewIceBlast2(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
     }
+  } else if (ch === 3) {
+    if (move === 0) {
+      if (a2 !== 5) { SetSpriteAction2(n, 0xd); SetSpriteInfo(n, 5, 0xb); }
+    } else if (move === 1) {
+      if (a2 !== 5) NewInvBoxGlove(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (move === 2) {
+      if (a2 !== 5) NewInvFireBall(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (move === 3) {
+      // Original quirk: tests sprite 1's state, not this fighter's.
+      if (GetSpriteAction2(1) !== 5) NewInvIceBall(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
+    }
+  } else if (ch === 4) {
+    NinjaSpecial(n, move);
+  } else if (ch === 5) {
+    MechSpecial(n, move);
+  } else if (ch === 6) {
+    KathySpecial(n, move);
+  } else if (ch === 7) {
+    GeorgeSpecial(n, move);
+  } else if (ch === 8) {
+    PhilSpecial(n, move);
+  } else if (ch === 9) {
+    SuperSpecial(n, move);
+  } else if (ch === 10) {
+    if (a2 === 5) return;
+    if (move === 0) NewBubble(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    else if (move === 1) { NewBodyParts(r, n); SetSpriteAction2(n, 0xe); }
+    else if (move === 2) NewDarkBeam(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    else if (move === 3) NewBats(GetSpriteInfo(n, 1), n);
   } else if (ch === 0xb) {
     if (a2 === 5) return;
     if (move === 0) NewProxMine(r, GetSpriteInfo(n, 1), n);
@@ -381,7 +418,39 @@ export function HandleAI(s) {
     s.action2 = 0xd;
     s.info[5] = 0xb;
   }
-  if (s.action2 === 0x13) return; // character-specific sub-AI, not needed by Ed or Speedy
+  if (s.action2 === 0x13) { // Super Squirrel flying: wander up, down, toward or away
+    if (Rand(5000) > 0x1386) {
+      s.action2 = 2;
+      s.f5a = 0;
+    }
+    if (s.f5a === 0) {
+      const r = Rand(4);
+      if (r === 2) s.f5a = 0x15;
+      else if (r === 0) s.f5a = 1;
+      else if (r === 1) s.f5a = 3;
+      else if (r === 3) s.f5a = 0x14;
+    }
+    if (Rand(1000) > 990) s.f5a = 0;
+    if (s.f5a === 1 || s.f5a === 3) {
+      s.action1 = 1;
+      if (s.f5a === 1) s.dir = o.left + 16 < s.rect.left + 16 ? 1 : 0;
+      else s.dir = s.rect.left + 16 < o.left + 16 ? 1 : 0;
+      if (o.left < s.rect.left + 16 && s.rect.left < o.right) s.f5a = 0;
+      if (touching()) {
+        s.f5a = 0;
+        s.action2 = 2;
+      }
+      if (s.rect.right > 0x3ff || s.rect.left < 1) s.f5a = 0;
+    } else if (s.f5a === 0x15) {
+      s.action1 = 0x15;
+      if (s.rect.top < 1) s.f5a = 0;
+    } else if (s.f5a === 0x14) {
+      s.action1 = 0x14;
+      // Original quirk: tests bottom > 1023, which can't happen in a 768-high world.
+      if (s.rect.bottom > 0x3ff) s.f5a = 0;
+    }
+    return;
+  }
   if (s.f5a === 0 && (s.action2 === 2 || s.action2 === 3)) {
     let c = level();
     if (GetLife(s.num) < 0x32 && Rand(2) !== 0) c = 1;
@@ -470,6 +539,18 @@ export function HandleAI(s) {
   if (s.action1 === 1 && Rand(1000) > 980 && s.action2 === 2 && OnSurface(s.rect, 0)) {
     s.action2 = 3;
     s.vy = -0x11;
+  }
+  if (s.f5e === 7 && s.action2 === 0xd) { // George's cane charge: turn at the edges, stop at random
+    if (s.rect.right > 0x3ff || s.rect.left < 1) s.dir = s.dir === 0 ? 1 : 0;
+    if (Rand(0x5dc) > 0x5d2) {
+      s.f5a = 0;
+      s.action2 = 2;
+    }
+  }
+  if (s.f5e === 9 && s.action2 === 0xe && touching()) { // Super Squirrel: stop on reaching the opponent
+    s.f5a = 0;
+    s.action1 = 2;
+    s.action2 = 2;
   }
   if (s.f5e === 1 && (s.action2 === 0xd || s.action2 === 0xe || s.action2 === 0xf) &&
     (s.rect.right >= 0x400 || s.rect.left <= 0)) {

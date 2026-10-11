@@ -83,6 +83,15 @@ export function OffCamera(dh, dv) {
   if (view.top < worldRect.top) offsetRect(view, 0, worldRect.top - view.top);
 }
 
+// The same for the second (split-screen) view.
+export function OffCamera2(dh, dv) {
+  offsetRect(view2, dh, dv);
+  if (worldRect.right < view2.right) offsetRect(view2, worldRect.right - view2.right, 0);
+  if (view2.left < worldRect.left) offsetRect(view2, worldRect.left - view2.left, 0);
+  if (worldRect.bottom < view2.bottom) offsetRect(view2, 0, worldRect.bottom - view2.bottom);
+  if (view2.top < worldRect.top) offsetRect(view2, 0, worldRect.top - view2.top);
+}
+
 export function GetVisRect() {
   return copyRect(view);
 }

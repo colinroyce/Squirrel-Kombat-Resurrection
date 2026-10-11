@@ -59,7 +59,7 @@ export function NewIceBlast2(r, oppIndex, num, dir, group) {
   NewSpriteFromCICN(T.iceBlast2, rect, HandleIceBlast);
 }
 
-function HandleIceBlast(s) {
+export function HandleIceBlast(s) {
   let victim = GetOpp(s.info[1], s.rect, s.info[2]);
   const o = GetSpriteRect(victim);
   s.frame = s.dir === 0 ? 0 : 1;
@@ -91,7 +91,7 @@ function HandleIceBlast(s) {
 
 // ---- the ice cube drawn over a frozen fighter ------------------------------------------------------
 
-function NewIceCube(victim) {
+export function NewIceCube(victim) {
   T.iceCube.info[1] = victim;
   // The original passes an uninitialised rect here. The cube (type 0x14c) runs in HandleSprites'
   // second pass the same frame and copies the victim's rect before it is ever drawn.

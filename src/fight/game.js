@@ -12,6 +12,7 @@ import {
   SetSpritePath,
 } from '../sprites.js';
 import { HandleSparks } from '../sparks.js';
+import { HandleQuakes } from '../quakes.js';
 import { PlaySound } from '../sound.js';
 import {
   AddPointsForLife, AddToDestTime, AddWin, CheckWin, DontDrawLifeBars, GetRoundNum, IncreaseRoundNum,
@@ -25,6 +26,14 @@ import { OnSurface, PartnerOfMe } from './player.js';
 import { HandleEd, HandleSpeedy, NewFireBall, NewPurpleBeam, NewSpin3Ball } from './chars.js';
 import { HandleIce, NewIceBlast, NewIceBlast2, NewIceColumn, NewIceFist } from './ice.js';
 import { HandleMuskrat, NewGrenades, NewProxMine, NewTracker } from './muskrat.js';
+import { HandleInvisible, NewInvBoxGlove, NewInvFireBall, NewInvIceBall } from './invisible.js';
+import { HandleMech, MechSpecial } from './mech.js';
+import { HandleNinja, NinjaSpecial } from './ninja.js';
+import { HandleKathy, KathySpecial } from './kathy.js';
+import { GeorgeSpecial, HandleOldSquirrel } from './george.js';
+import { HandlePhil, PhilSpecial } from './philbert.js';
+import { HandleSuper, SuperSpecial } from './super.js';
+import { HandleCorpse, NewBats, NewBodyParts, NewBubble, NewDarkBeam } from './corpse.js';
 import { ForestRun, NewSceneSprites } from './forest.js';
 import { TundraRun } from './tundra.js';
 import { CityRun } from './city.js';
@@ -43,7 +52,14 @@ export function Quit() { fight.quit = 1; }
 export function SetGoToSelection(v) { fight.goToSelection = v; }
 
 // Indexed by character; fighters not built yet are left empty.
-const PROCS = [HandleEd, HandleSpeedy, HandleIce];
+const PROCS = [HandleEd, HandleSpeedy, HandleIce, HandleInvisible];
+PROCS[4] = HandleNinja;
+PROCS[5] = HandleMech;
+PROCS[6] = HandleKathy;
+PROCS[7] = HandleOldSquirrel;
+PROCS[8] = HandlePhil;
+PROCS[9] = HandleSuper;
+PROCS[10] = HandleCorpse;
 PROCS[0xb] = HandleMuskrat;
 
 // ---- players -------------------------------------------------------------------------------
@@ -110,6 +126,7 @@ export async function Run() {
     MyRun();
     HandleCameras();
     await HandleSprites();
+    HandleQuakes();
     HandleSparks();
     DrawSprites();
     await nextFrame(start);
@@ -201,6 +218,65 @@ function CheckMoves1() {
     } else if (CheckPattern1(3, 6, 1)) {
       ClearPattern1();
       if (a2() !== 5) NewIceBlast2(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    }
+  } else if (ch === 3) {
+    if (CheckPattern1(0, 1, 0, 2, 3) || CheckPattern1(2, 1, 2, 0, 3)) {
+      ClearPattern1();
+      if (a2() !== 5) { SetSpriteAction2(0, 0xd); SetSpriteInfo(0, 5, 0xb); }
+    } else if (CheckPattern1(0, 0, 2, 2, 5) || CheckPattern1(2, 2, 0, 0, 5)) {
+      ClearPattern1();
+      if (a2() !== 5) NewInvBoxGlove(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    } else if (CheckPattern1(0, 0, 2, 2, 3) || CheckPattern1(2, 2, 0, 0, 3)) {
+      ClearPattern1();
+      if (a2() !== 5) NewInvFireBall(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    } else if (CheckPattern1(0, 0, 2, 2, 4) || CheckPattern1(2, 2, 0, 0, 4)) {
+      ClearPattern1();
+      // Original quirk: tests sprite 1's state, not player 1's.
+      if (GetSpriteAction2(1) !== 5) NewInvIceBall(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    }
+  } else if (ch === 4) {
+    if (CheckPattern1(0, 0, 0, 2, 5) || CheckPattern1(2, 2, 2, 0, 5)) { ClearPattern1(); NinjaSpecial(0, 0); }
+    else if (CheckPattern1(0, 3, 4, 4, 3) || CheckPattern1(2, 3, 4, 4, 3)) { ClearPattern1(); NinjaSpecial(0, 1); }
+    else if (CheckPattern1(0, 0, 0, 4, 0) || CheckPattern1(2, 2, 2, 4, 2)) { ClearPattern1(); NinjaSpecial(0, 2); }
+    else if (CheckPattern1(3, 3, 4, 0, 0) || CheckPattern1(3, 3, 4, 2, 2)) { ClearPattern1(); NinjaSpecial(0, 3); }
+  } else if (ch === 5) {
+    if (CheckPattern1(0, 0, 2, 2, 5) || CheckPattern1(2, 2, 0, 0, 5)) { ClearPattern1(); MechSpecial(0, 0); }
+    else if (CheckPattern1(0, 0, 0, 2, 6) || CheckPattern1(2, 2, 2, 0, 6)) { ClearPattern1(); MechSpecial(0, 1); }
+    else if (CheckPattern1(0, 0, 3, 1) || CheckPattern1(2, 2, 3, 1)) { ClearPattern1(); MechSpecial(0, 2); }
+    else if (CheckPattern1(0, 2, 2, 4) || CheckPattern1(2, 0, 0, 4)) { ClearPattern1(); MechSpecial(0, 3); }
+  } else if (ch === 6) {
+    if (CheckPattern1(0, 4, 4, 2) || CheckPattern1(2, 4, 4, 0)) { ClearPattern1(); KathySpecial(0, 0); }
+    else if (CheckPattern1(2, 2, 3, 2, 4) || CheckPattern1(0, 0, 3, 0, 4)) { ClearPattern1(); KathySpecial(0, 1); }
+    else if (CheckPattern1(2, 2, 5, 3, 4) || CheckPattern1(0, 0, 5, 3, 4)) { ClearPattern1(); KathySpecial(0, 2); }
+    else if (CheckPattern1(2, 2, 6, 4) || CheckPattern1(0, 0, 6, 4)) { ClearPattern1(); KathySpecial(0, 3); }
+  } else if (ch === 7) {
+    if (CheckPattern1(0, 2, 3, 4, 5) || CheckPattern1(2, 0, 3, 4, 5)) { ClearPattern1(); GeorgeSpecial(0, 0); }
+    else if (CheckPattern1(6, 5, 3, 4, 2) || CheckPattern1(6, 5, 3, 4, 0)) { ClearPattern1(); GeorgeSpecial(0, 1); }
+    else if (CheckPattern1(0, 2, 4, 3) || CheckPattern1(2, 0, 4, 3)) { ClearPattern1(); GeorgeSpecial(0, 2); }
+    else if (CheckPattern1(2, 2, 3, 2, 0) || CheckPattern1(0, 0, 3, 0, 2)) { ClearPattern1(); GeorgeSpecial(0, 3); }
+  } else if (ch === 8) {
+    if (CheckPattern1(0, 0, 2, 5) || CheckPattern1(2, 2, 0, 5)) { ClearPattern1(); PhilSpecial(0, 0); }
+    else if (CheckPattern1(3, 3, 2, 2, 5) || CheckPattern1(3, 3, 0, 0, 5)) { ClearPattern1(); PhilSpecial(0, 1); }
+    else if (CheckPattern1(3, 4, 2, 2) || CheckPattern1(3, 4, 0, 0)) { ClearPattern1(); PhilSpecial(0, 2); }
+    else if (CheckPattern1(3, 2, 2, 0, 3) || CheckPattern1(3, 0, 0, 2, 3)) { ClearPattern1(); PhilSpecial(0, 3); }
+  } else if (ch === 9) {
+    if (CheckPattern1(3, 0, 2, 4, 1) || CheckPattern1(3, 2, 0, 4, 1)) { ClearPattern1(); SuperSpecial(0, 0); }
+    else if (CheckPattern1(2, 3, 3, 3, 5) || CheckPattern1(0, 3, 3, 3, 5)) { ClearPattern1(); SuperSpecial(0, 1); }
+    else if (CheckPattern1(0, 0, 0, 4) || CheckPattern1(2, 2, 2, 4)) { ClearPattern1(); SuperSpecial(0, 2); }
+    else if (CheckPattern1(0, 4, 2, 4, 5) || CheckPattern1(2, 4, 0, 4, 5)) { ClearPattern1(); SuperSpecial(0, 3); }
+  } else if (ch === 10) {
+    if (CheckPattern1(0, 0, 2, 2, 3) || CheckPattern1(2, 2, 0, 0, 3)) {
+      ClearPattern1();
+      if (a2() !== 5) NewBubble(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    } else if (CheckPattern1(5, 0, 2, 3, 1) || CheckPattern1(5, 2, 0, 3, 1)) {
+      ClearPattern1();
+      if (a2() !== 5) { NewBodyParts(r, 0); SetSpriteAction2(0, 0xe); }
+    } else if (CheckPattern1(0, 0, 2, 4) || CheckPattern1(2, 2, 0, 4)) {
+      ClearPattern1();
+      if (a2() !== 5) NewDarkBeam(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    } else if (CheckPattern1(0, 3, 6, 2, 4) || CheckPattern1(2, 3, 6, 0, 4)) {
+      ClearPattern1();
+      if (a2() !== 5) NewBats(GetSpriteInfo(0, 1), 0);
     }
   } else if (ch === 0xb) {
     if (CheckPattern1(3, 0, 4, 2) || CheckPattern1(3, 2, 4, 0)) {
