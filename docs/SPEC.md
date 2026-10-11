@@ -360,6 +360,41 @@ Forest sprites (NewSceneSprites), created after the players so the log is slot 2
   target inset 2) → dies, DoDamage(target, 18, −1), path (h − Rand(7) − 3, v − 3), dir 1, frame 0x22 + action2 5, info2 0.
 - MyRun adds leaves and death acorns over time (see Main loop).
 
+Field (scene 1): InitPlats then FillBackWithPict(12000); no platforms (the ground is bottom > 767); no MyRun spawns.
+- NewSceneSprites: 20 × { y = Rand(768); x = Rand(1024); NewButterfly(x − 16, y − 16) } (y is rolled first).
+- NewButterfly(x, y): rect (x, y)-(x + 16, y + 16); template vx = Rand(9) − 4, then vy = Rand(9) − 4 (written to the
+  template, so it keeps the last values); proc HandleButterfly. Template: cicn 1094, 8 frames, delay 5, 16×16, speed 4.
+- HandleButterfly: move (vx, vy); dir = vx < 0 ? 1 : 0; anim f56/f58; frames 0–3 (dir 0) / 4–7 (dir 1);
+  right > 1023 or left < 1 → vx = −vx; bottom > 767 or top < 1 → vy = −vy (only flips, never pushes back inside, so a
+  butterfly can jitter at the world edge); Rand(20) > 17 → vx += Rand(3) − 1; Rand(20) > 17 → vy += Rand(3) − 1;
+  clamp vx then vy to ≤ speed, then vx then vy to ≥ −speed. Harmless: no collision with players.
+
+Tundra (scene 2): InitPlats, FillBackWithPict(13000), the 10 platforms above. No ice physics: HandlePlayer and OnSurface
+have no scene checks besides the Forest log.
+- NewSceneSprites: 20 × NewSnow. MyRun: r = Rand(10000); (r > 9900 or (snow (type 154) < 50 and Rand(10000) > 9000)) and
+  snow < 50 → NewSnow; then Rand(10000) > 9875 → NewSnowBall.
+- NewSnow: x = Rand(1018); rect (x, −6)-(x + 6, 0); template vy = Rand(3) + 2; NewSpriteFromPICT (PICT 154, 6×6,
+  speed 3). HandleSnow: move; Rand(40) > 37 → vx += Rand(3) − 1, clamp ±2; top > 768 → dies.
+- NewSnowBall (cicn 1103, 4 frames, delay 4, 32×32, speed 9): y = Rand(536); Rand(2) == 0 → rect (−28, y + 200)-(4, y + 232),
+  vx = speed + Rand(7) − 3; else rect (1020, y + 200)-(1052, y + 232), vx = Rand(7) − 3 − speed (template vx).
+- HandleSnowBall: move; vy += 1 (no cap); anim, frames 0–3; OnSurface(rect, num) (may lift it onto a ledge) or
+  bottom > 768 or top < 0 → vy = trunc(vy × −0.75) (fctiwz); left > 1024 or right < 0 → dies. Then each player (0–1, or
+  0–3 outside one-on-one; both inset 2): DoDamage(p, 25, −1), dies, path (h − Rand(7) − 3, v − 9), frame 0x22 + action2 5
+  (unless dead/dummy), info2 0 — still tested after it died this frame, like the death acorn.
+
+Great Wall (scene 3): InitPlats, 4 platforms (above), FillBackWithPict(14000). NewSceneSprites: 10 sprites of cicn 1107
+(32×24, grey block) from (36, 744)-(68, 768), 102 px apart, proc DoNothing (scenery only). No MyRun spawns.
+
+City (scene 4): InitPlats, 3 platforms (above), FillBackWithPict(15000). No scene sprites at start; MyRun: fewer than 10
+birds (type 1087) → NewFlock.
+- NewFlock (bird template, see Forest): y = Rand(393) + 300; rect (−12, y)-(0, y + 14); template vy = 0, vx = speed + 1 → leader
+  (HandleBird3). Then template vx = 0, info2 = leader slot; 15 followers (HandleBird2): dv = Rand(21), dh = Rand(21) (dv rolled
+  first), rect offset by (dh − 10, dv − 10) cumulatively. The template keeps vx 0, vy 0, info2 = leader.
+- Both: move; dir = vx < 1 ? 1 : 0; anim; frames 0–2 / 3–5; clamps as HandleBird (vx ±9, vy > 10 → 9, vy < −8 → −9);
+  left > 1024 → dies. No KeepSpriteOnScreen, no player collision.
+- HandleBird3 (leader): Rand(2) → (Rand(2) == 0 ? vy −= Rand1(2) : vy += Rand1(2)).
+- HandleBird2 (follower): homes on the rect in slot info2 like HandleBird (even after the leader has gone and the slot is reused).
+
 ## Sounds and music
 - `PlaySound(i)` plays snd resource 128 + i (i = 0..20) on the first idle channel of 15 (none free → dropped);
   only when sound pref on. 0 "Monkey Farm" voice · 1 whoosh · 2 jump · 3–7 hits (Rand(5)+3) · 8–14 attack yells

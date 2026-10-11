@@ -69,4 +69,4 @@ export const GetScene = () => sel.scene;
 
 // Fighters and scenes built so far; the rest of the game is shown but inactive.
 export const STAGED_CHARS = [0, 1];
-export const STAGED_SCENES = [0];
+export const STAGED_SCENES = [0, 1, 2, 3, 4];

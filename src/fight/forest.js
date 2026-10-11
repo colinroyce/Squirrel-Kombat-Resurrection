@@ -1,4 +1,5 @@
-// Scenes: InitScene (background + platforms), NewSceneSprites and the Forest's creatures.
+// Scenes: InitScene (background + platforms) and NewSceneSprites for all five scenes, plus the
+// Forest's creatures. The other scenes' creatures are in field.js, tundra.js and city.js.
 
 import { Rand, Rand1, detectCollision, offsetRect, setRect } from '../mac.js';
 import { fillBackWithPict } from '../gfx.js';
@@ -11,7 +12,9 @@ import { MakeSparks } from '../sparks.js';
 import { DoDamage } from '../hud.js';
 import { GetNumPlayers, GetPlayMode, GetScene } from '../state.js';
 import { T } from '../templates.js';
-import { KeepSpriteOnScreen } from '../common.js';
+import { DoNothing, KeepSpriteOnScreen } from '../common.js';
+import { NewButterfly } from './field.js';
+import { NewSnow } from './tundra.js';
 
 const versus = () => GetNumPlayers() === 1 || (GetNumPlayers() === 2 && GetPlayMode() === 0);
 
@@ -38,8 +41,36 @@ export function InitScene() {
     SetPlatRect(624, 225, 1000, 247);
     SetPlatRect(624, 95, 855, 129);
     SetPlatRect(629, 319, 737, 332);
+  } else if (GetScene() === 1) {
+    InitPlats();
+    fillBackWithPict(12000, 1024, 768);
+  } else if (GetScene() === 2) {
+    InitPlats();
+    fillBackWithPict(13000, 1024, 768);
+    SetPlatRect(42, 652, 132, 673);
+    SetPlatRect(106, 567, 203, 592);
+    SetPlatRect(0, 484, 273, 507);
+    SetPlatRect(226, 423, 345, 441);
+    SetPlatRect(344, 340, 608, 363);
+    SetPlatRect(556, 414, 657, 431);
+    SetPlatRect(671, 458, 818, 478);
+    SetPlatRect(814, 532, 868, 553);
+    SetPlatRect(893, 686, 994, 703);
+    SetPlatRect(805, 603, 1024, 634);
+  } else if (GetScene() === 3) {
+    InitPlats();
+    SetPlatRect(156, 538, 456, 758);
+    SetPlatRect(576, 538, 876, 758);
+    SetPlatRect(973, 608, 1273, 758);
+    SetPlatRect(0, 608, 52, 758);
+    fillBackWithPict(14000, 1024, 768);
+  } else if (GetScene() === 4) {
+    InitPlats();
+    SetPlatRect(23, 656, 106, 671);
+    SetPlatRect(766, 727, 1003, 741);
+    SetPlatRect(769, 665, 1000, 685);
+    fillBackWithPict(15000, 1024, 768);
   }
-  // Field, Tundra, Great Wall and City are not part of this build yet.
   NewSceneSprites();
 }
 
@@ -54,6 +85,21 @@ export function NewSceneSprites() {
     NewNest(70, 218);
     NewNest(760, 226);
     NewNest(844, 88);
+  } else if (GetScene() === 1) {
+    for (let i = 0; i < 0x14; i++) {
+      const y = Rand(0x300); // the original rolls y before x
+      const x = Rand(0x400);
+      NewButterfly(x - 0x10, y - 0x10);
+    }
+  } else if (GetScene() === 2) {
+    for (let i = 0; i < 0x14; i++) NewSnow();
+  } else if (GetScene() === 3) {
+    // Great Wall: 10 grey blocks along the bottom, 102 px apart; scenery only (DoNothing).
+    const r = setRect({}, 0x24, 0x2e8, 0x44, 0x300);
+    for (let i = 0; i < 10; i++) {
+      NewSpriteFromCICN(T.wallThing, r, DoNothing);
+      offsetRect(r, 0x66, 0);
+    }
   }
 }
 

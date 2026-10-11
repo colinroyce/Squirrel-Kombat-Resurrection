@@ -21,12 +21,15 @@ Built so far: splash → loading → title → options (and the Keys screen) →
 select → a one-on-one fight between **Ed** and **Speedy** in the **Forest**, with rounds, the HUD,
 the CPU opponent, and both fighters' special moves.
 
+Since then: all five scenes are playable: Forest, Field (butterflies), Tundra (ledges, snow and
+rolling snowballs), Great Wall (towers and pits) and City (ledges and passing flocks of birds).
+
 Everything else on these screens is shown and animates as in the original, but does nothing when
 clicked yet:
 
 - Scores, Quit, and credits on the title screen
 - 2 Players, Practice, Tournament, and Two on Two
-- The other ten fighters and four scenes
+- The other ten fighters
 - Cheat codes, alert dialogs, and split screen
 
 The character screen opens in Tournament mode, as the original does, so click **ONE ON ONE**

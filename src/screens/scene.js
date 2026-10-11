@@ -33,7 +33,7 @@ export async function OpenSceneSelector() {
   await HandleSceneSelector();
 }
 
-// Scenes other than the Forest can be browsed but not started yet.
+// Scenes not built yet (see STAGED_SCENES) can be browsed but not started.
 const canStart = () => STAGED_SCENES.includes(sel.scene);
 
 async function HandleSceneSelector() {

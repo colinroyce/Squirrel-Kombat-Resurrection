@@ -62,12 +62,12 @@ Working:
   - projectiles and all four special moves for both fighters
   - Forest hazards: the log elevator, tree eyes, leaves, death acorns, and nests with birds
   - pause, and back to character select after a match
+- Since milestone 1: Field, Tundra, Great Wall and City, each with its hazards and creatures.
 
 Shown but inactive:
 - Title screen: Scores, Quit and Credits.
 - Character select: 2 Players, Practice, Tournament and Two on Two.
 - The other ten fighters plus the Muskrat.
-- The scenes Field, Tundra, Great Wall and City.
 - Cheats, the original's alert dialogs, split screen, and player 2's keyboard controls in fights.
 
 Notes:
@@ -83,7 +83,8 @@ Make all of these fully playable in ONE ON ONE mode (1 player vs the CPU), faith
 
 - **Fighters:** ICE, INVISIBLE, NINJA, MECH, KATHY, GEORGE, PHILBERT, SUPER SQUIRREL, CORPSE,
   plus MILITARY MUSKRAT once the unlock rule is settled. ED and SPEEDY are done.
-- **Scenes:** Field (PICT 12000), Tundra (13000), Great Wall (14000), City (15000). Forest is done.
+- **Scenes:** all five are done (Field, Tundra, Great Wall and City added after milestone 1; awaiting
+  Colin's check).
 
 Each fighter needs:
 - its `Handle<Name>` procedure
@@ -104,7 +105,7 @@ Each scene needs:
 - its per-frame hazards, like `ForestRun`, called from `MyRun`
 - any special surfaces handled in `OnSurface`
 
-Then widen `STAGED_CHARS` and `STAGED_SCENES` in `src/state.js`, and the CPU pick, to the full
+Then widen `STAGED_CHARS` in `src/state.js` (`STAGED_SCENES` already holds all five), and the CPU pick, to the full
 roster (`Rand(numChars)`).
 
 Work one fighter at a time and have Colin check each before moving on; agree the order with him
@@ -167,7 +168,10 @@ Code map (`src/`):
   - `player.js` — `HandlePlayer`/`HandlePlayer2`, the state machine shared by every fighter,
     plus `OnSurface` and `GetOpp`
   - `chars.js` — Ed, Speedy, their projectiles, and the AI
-  - `forest.js` — platforms, `InitScene`, `NewSceneSprites`, and the Forest's sprites
+  - `forest.js` — platforms, `InitScene` and `NewSceneSprites` for every scene, and the Forest's sprites
+  - `field.js` — the Field's butterflies
+  - `tundra.js` — the Tundra's snow and snowballs (`TundraRun`)
+  - `city.js` — the City's bird flocks (`CityRun`)
 
 ## Reverse-engineering files (not in git)
 

@@ -24,6 +24,8 @@ import { GetChosenChar, GetKey, GetNumPlayers, GetPlayMode, GetScene } from '../
 import { OnSurface, PartnerOfMe } from './player.js';
 import { HandleEd, HandleSpeedy, NewFireBall, NewPurpleBeam, NewSpin3Ball } from './chars.js';
 import { ForestRun, NewSceneSprites } from './forest.js';
+import { TundraRun } from './tundra.js';
+import { CityRun } from './city.js';
 
 export const fight = { quit: 0, goToSelection: 0 };
 export const percents = { p0: 0, p1: 0, p2: 0, p4: 0 };
@@ -92,6 +94,8 @@ export async function DoRoundAnimation() {
 
 function MyRun() {
   if (GetScene() === 0) ForestRun();
+  if (GetScene() === 2) TundraRun();
+  if (GetScene() === 4) CityRun();
 }
 
 export async function Run() {
