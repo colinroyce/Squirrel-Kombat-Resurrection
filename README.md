@@ -13,7 +13,7 @@ python3 -m http.server 8000
 ```
 
 Then open <http://localhost:8000/> and click (or press a key) to start. Browsers only allow sound
-after a click or key press. The 640×480 screen is scaled by whole steps to fit the window.
+after a click or key press. The 640×480 screen is scaled to fill the window, keeping its 4:3 shape.
 
 ## First milestone
 

@@ -16,9 +16,9 @@ const canvas = document.getElementById('screen');
 const gate = document.getElementById('gate');
 const status = document.getElementById('status');
 
+// Fill the window, keeping the original 4:3 shape.
 function fit() {
-  const s = Math.min(window.innerWidth / 640, window.innerHeight / 480);
-  const k = s >= 1 ? Math.floor(s) : s;
+  const k = Math.min(window.innerWidth / 640, window.innerHeight / 480);
   canvas.style.width = 640 * k + 'px';
   canvas.style.height = 480 * k + 'px';
 }
