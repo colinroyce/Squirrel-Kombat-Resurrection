@@ -145,8 +145,8 @@ export async function DoWinScreen() {
 // ScrollText(STR# id, count, rect, size, _, font, step, leading): the strings scroll up from
 // below the rect's bottom, 1 px every 3 ticks, fading through greys near the top and bottom,
 // until they have all gone past the top or the mouse button is pressed. (The 6th argument, 30,
-// is passed but not used.) It is drawn in Geneva 10, which this build doesn't have yet (see
-// decision 7 in CLAUDE.md), so the text is blank until that font is found.
+// is passed but not used.) It is drawn in Geneva 10, which uses the Geneva 9 stand-in (see
+// decision 7 in CLAUDE.md). Also used by the title screen's credits.
 const GREY = { a: 0x84ec, b: 0x8000, c: 0xab54, d: 0xd400, e: 0xdd6b, f: 0xeaff, g: 0xf2d7, h: 0xffff };
 function scrollColor(v) {
   let c = GREY.h;

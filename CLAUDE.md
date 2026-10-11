@@ -75,9 +75,9 @@ Working:
   - Tournament mode (`src/screens/tournament.js`) with the win screen, and high scores (`src/screens/scores.js`):
     the name entry after a Tournament and the title's SCORES screen
   - Practice mode (`src/fight/practice.js`): the training dummy and the timed tutorial messages
+  - the credits (`DoCredits` in `src/screens/title.js`)
 
 Shown but inactive:
-- Title screen: Quit and Credits.
 - Character select: 2 Players and Two on Two.
 - Cheats, the original's alert dialogs, split screen, and player 2's keyboard controls in fights.
 
@@ -225,15 +225,20 @@ capstone, and a patched deark.
   rebuilds; the contents and layout are the game's own DLOG/DITL 999 (`OpenScoreDialog`).
 - **High scores and the Muskrat unlock are saved in the browser** (the original used its
   preferences file).
+- **No QUIT button on the title screen** (Colin's choice): a web page has nothing to quit to
+  (`NewTitleScreenSprites` in `src/screens/title.js`).
 - **No music during fights**: the theme plays on the title, character and scene screens and stops
   when a fight (or the Tournament ladder) starts (`OpenSelection` in `src/screens/select.js`). The
   original kept it playing throughout.
 - **10 pt text in the Geneva 9 glyphs** (see decision 7).
-- **The pause move guide** (`src/screens/pauseguide.js`): P shows a Controls page and one page per
+- **The pause move guide** (`src/screens/pauseguide.js`): Esc shows a Controls page and one page per
   fighter (combos in the player's current keys, facing right; Military Muskrat hidden until
   unlocked), flipped with the arrow or walk keys or the on-screen buttons. The original pause only
-  showed PICT 9000. Esc also pauses (the original quit on Esc); quitting a fight is the guide's
-  QUIT button.
+  showed PICT 9000. The original paused on P and quit on Esc; now only Esc pauses (P is player 2's
+  jump) and quitting a fight is the guide's QUIT button.
+- **New default keys** (`DEFAULT_KEYS` in `src/state.js`): player 1's uppercut is Left Shift (was
+  Space); player 2 is L ' P ; [ O and Right Shift (was the number pad). Right Shift gets its own key
+  code (`src/input.js`). Saved keys still on an original default move to the new ones.
 - New art goes in `assets/added/`, with a line in `assets/added/README.md`.
 - Never hand-edit the extracted originals in `assets/`; regenerate them with `tools/extract`.
 - One extraction fix so far: cicn 1128 (the title's blank tile) lists colour value 0 twice. The

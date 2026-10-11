@@ -34,11 +34,12 @@ Since then:
   one page each, flipped with the arrow keys. (An addition: in 1999 the moves were in a separate
   text file.)
 - Practice mode: hit the training dummy (nobody gets hurt) while tutorial tips cycle above.
+- Credits: click the CREDITS corner of the title screen.
+- The title screen has no QUIT button (an addition: there's nothing to quit in a browser).
 
 Everything else on these screens is shown and animates as in the original, but does nothing when
 clicked yet:
 
-- Quit and credits on the title screen
 - 2 Players and Two on Two
 - Cheat codes, alert dialogs, and split screen
 
@@ -60,25 +61,26 @@ first. The CPU picks its fighter at random.
 
 ## Controls
 
-These are the original defaults, recovered from the binary. You can change them in Options → Keys,
-and they're saved in the browser.
+These are the defaults. You can change them in Options → Keys, and they're saved in the browser.
+They're an addition: the original's uppercut was Space and player 2 used the number pad, so the new
+layout lets two players share a laptop keyboard (player 2's keys mirror player 1's).
 
-| Action | Player 1 | Player 2 (keypad) |
+| Action | Player 1 | Player 2 |
 |---|---|---|
-| Walk left / right | A / D | 4 / 6 |
-| Jump | W | 8 |
-| Punch | S | 5 |
-| Kick | E | 9 |
-| Uppercut | Space | 0 |
-| Spin kick | Q | 7 |
+| Walk left / right | A / D | L / ' |
+| Jump | W | P |
+| Punch | S | ; |
+| Kick | E | [ |
+| Uppercut | Left Shift | Right Shift |
+| Spin kick | Q | O |
 
 Other keys:
 
 - Return or Enter starts from the title screen and confirms on every menu. Space also starts the
   scene.
 - On the character screen, Esc cancels and the walk keys change fighter.
-- During a fight, P or Esc pauses and shows the move guide. To leave the fight, click QUIT in the
-  top left of the pause screen. (An addition: in the original, Esc quit straight away.)
+- During a fight, Esc pauses and shows the move guide. To leave the fight, click QUIT in the
+  top left of the pause screen. (An addition: in the original, P paused and Esc quit straight away.)
 
 Special moves, from the original "Special Moves" sheet (`<` back, `>` forward, `p` punch, `k` kick,
 `u` uppercut, `s` spin kick, `^` jump). Tap the keys: holding one down counts once.

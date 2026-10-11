@@ -9,7 +9,7 @@ const CODE_TO_MAC = {
   KeyP: 0x23, Enter: 0x24, KeyL: 0x25, KeyJ: 0x26, Quote: 0x27, KeyK: 0x28, Semicolon: 0x29,
   Backslash: 0x2a, Comma: 0x2b, Slash: 0x2c, KeyN: 0x2d, KeyM: 0x2e, Period: 0x2f, Tab: 0x30,
   Space: 0x31, Backquote: 0x32, Backspace: 0x33, Escape: 0x35, MetaLeft: 0x37, MetaRight: 0x37,
-  ShiftLeft: 0x38, ShiftRight: 0x38, CapsLock: 0x39, AltLeft: 0x3a, AltRight: 0x3a,
+  ShiftLeft: 0x38, ShiftRight: 0x3c, CapsLock: 0x39, AltLeft: 0x3a, AltRight: 0x3a,
   ControlLeft: 0x3b, ControlRight: 0x3b, NumpadDecimal: 0x41, NumpadMultiply: 0x43,
   NumpadAdd: 0x45, NumLock: 0x47, NumpadDivide: 0x4b, NumpadEnter: 0x4c, NumpadSubtract: 0x4e,
   NumpadEqual: 0x51, Numpad0: 0x52, Numpad1: 0x53, Numpad2: 0x54, Numpad3: 0x55, Numpad4: 0x56,
@@ -18,6 +18,9 @@ const CODE_TO_MAC = {
   F15: 0x71, Insert: 0x72, Home: 0x73, PageUp: 0x74, Delete: 0x75, F4: 0x76, End: 0x77, F2: 0x78,
   PageDown: 0x79, F1: 0x7a, ArrowLeft: 0x7b, ArrowRight: 0x7c, ArrowDown: 0x7d, ArrowUp: 0x7e,
 };
+
+// Not in the original: Right Shift has its own code (0x3c, as on later Macs) so it can be player 2's
+// uppercut; the original's GetKeys saw both Shift keys as 0x38.
 
 const held = new Set();
 const events = []; // {what: 1 mouseDown | 3 keyDown, mac, key}

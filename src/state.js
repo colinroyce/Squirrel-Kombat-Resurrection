@@ -5,9 +5,17 @@ import { Rand } from './mac.js';
 
 // Key slots: P1 left, jump, right, punch, kick, uppercut, spin; then the same for P2.
 // Each entry is [character shown on the Keys screen, Mac virtual key code] (DefaultKeys).
-export const DEFAULT_KEYS = [
+const ORIGINAL_KEYS = [
   ['A', 0x00], ['W', 0x0d], ['D', 0x02], ['S', 0x01], ['E', 0x0e], [' ', 0x31], ['Q', 0x0c],
   ['4', 0x56], ['8', 0x5b], ['6', 0x58], ['5', 0x57], ['9', 0x5c], ['0', 0x52], ['7', 0x59],
+];
+
+// Not in the original (Colin's choice): new defaults so two players fit on one laptop keyboard.
+// Player 1's uppercut moves from Space to Left Shift; player 2 moves off the number pad to a mirror
+// of player 1's layout (L ' P ; [ O, uppercut Right Shift).
+export const DEFAULT_KEYS = [
+  ['A', 0x00], ['W', 0x0d], ['D', 0x02], ['S', 0x01], ['E', 0x0e], ['', 0x38], ['Q', 0x0c],
+  ['L', 0x25], ['P', 0x23], ["'", 0x27], [';', 0x29], ['[', 0x21], ['', 0x3c], ['O', 0x1f],
 ];
 
 // DefaultPrefs: sound on, music on, difficulty medium, yellow blood, 60-second rounds.
@@ -21,6 +29,12 @@ export function loadPrefs() {
     const p = JSON.parse(localStorage.getItem(STORE) || 'null');
     if (p) Object.assign(prefs, p);
   } catch (e) { /* no storage: defaults */ }
+  // Saved keys still on an original default move to the new defaults; changed ones are kept.
+  if (!prefs.keysV2) {
+    prefs.keys = prefs.keys.map((k, i) => (k[1] === ORIGINAL_KEYS[i][1] ? DEFAULT_KEYS[i].slice() : k));
+    prefs.keysV2 = 1;
+    savePrefs();
+  }
   SetWantsSound(prefs.sound);
   SetWantsMusic(prefs.music);
   if (prefs.muskrat) sel.numChars = 12; // Not in the original: see UnlockMuskrat

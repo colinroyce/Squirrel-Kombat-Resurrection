@@ -1,7 +1,7 @@
 // Title screen: DoTitle, TitleLoop, HandleTitle and the title sprites.
 
 import { Rand, Rand1, TickCount, offsetRect, ptInRect, setRect, untilTick } from '../mac.js';
-import { fillBackWithPict } from '../gfx.js';
+import { drawPicture, fillBackWithPict, sctx } from '../gfx.js';
 import { Button, CheckKey, GetMouse } from '../input.js';
 import { DontHandleCamera, GetSplit, HandleCamera, HandleCameraSplit, OffCamera, SetRenderOptions } from '../camera.js';
 import { DrawSprites, GetNumSprites, HandleSprites, KillAllSprites, KillSprite, NewSpriteFromCICN } from '../sprites.js';
@@ -14,6 +14,7 @@ import { NewCursorSprite, OnScreen, nextFrame } from '../common.js';
 import { OpenOptions } from './options.js';
 import { OpenSelection } from './select.js';
 import { DoHighScores } from './scores.js';
+import { ScrollText } from './tournament.js';
 
 const title = { message: 0 };
 
@@ -52,7 +53,7 @@ async function TitleLoop() {
 
 async function HandleTitle() {
   const start = TickCount();
-  CustomLoop();
+  await CustomLoop();
   CheckTitleKeyDown();
   if (GetSplit() === 0) HandleCamera(); else HandleCameraSplit();
   await HandleSprites();
@@ -61,12 +62,42 @@ async function HandleTitle() {
   await nextFrame(start);
 }
 
-function CustomLoop() {
+async function CustomLoop() {
+  const credits = setRect({}, 0, 0x1ac, 0x5e, 0x1e0);
   // The added RESURREKTION letters are left out of the count, so kickers spawn as in the original.
   if (Rand(9000) > 8900 || GetNumSprites() - T.subtitle.length < 23) {
     if (Rand(2) === 0) NewFlyKicker(2); else NewFlyKicker(1);
   }
-  // The credits hot spot (0,428)-(94,480) is not part of this build yet.
+  // Clicking the CREDITS corner of the title picture shows it pressed (PICT 158), runs the
+  // credits, then rebuilds the title screen.
+  if (Button()) {
+    const m = GetMouse();
+    if (ptInRect(m.h, m.v, credits)) {
+      drawPicture(sctx, 158, credits);
+      PlaySound(0x10);
+      await DoCredits();
+      await Fade(0);
+      KillAllSprites();
+      fillBackWithPict(7000, 640, 480);
+      NewTitleScreenSprites();
+      StartHint();
+      DrawSprites();
+      await FadeBack(0);
+    }
+  }
+}
+
+// The credits: STR# 129 (103 lines) scrolling up over PICT 128, 2 px every 3 ticks, until they
+// have all gone by or the mouse is pressed. Quirk kept: a click still held from the CREDITS
+// corner when the fade ends stops them straight away.
+async function DoCredits() {
+  await Fade(2);
+  QuitHint();
+  KillAllSprites();
+  fillBackWithPict(128, 640, 480);
+  DrawSprites();
+  await FadeBack(2);
+  await ScrollText(0x81, 0x67, setRect({}, 0x14, 0, 0x104, 0x1e0), 10, 0x1e, 1, 2, 8);
 }
 
 function CheckTitleKeyDown() {
@@ -82,7 +113,8 @@ export function NewTitleScreenSprites() {
   NewSpriteFromCICN(T.start, setRect({}, 48, 480, 112, 480 + h), HandleStart);
   NewSpriteFromCICN(T.options, setRect({}, 208, 480, 272, 480 + h), HandleOptions);
   NewSpriteFromCICN(T.scores, setRect({}, 368, 480, 432, 480 + h), HandleScores);
-  NewSpriteFromCICN(T.quit, setRect({}, 528, 480, 592, 480 + h), HandleQuit);
+  // Not in the original: the QUIT button (528, 480) is left out, since a web page has no
+  // application to quit (Colin's choice).
   NewCursorSprite();
   for (let i = 0; i < 15; i++) {
     NewSpriteFromCICN(T.letters[i], setRect({}, 304, 150, 336, 182), HandleLetter);
@@ -132,8 +164,6 @@ function moveProj(s) {
 function HandleStart(s) { titleButton(s, (r) => newProj(r, HandleStartProj)); }
 function HandleOptions(s) { titleButton(s, (r) => newProj(r, HandleOptionsProj)); }
 function HandleScores(s) { titleButton(s, (r) => newProj(r, HandleScoresProj)); }
-// Quit is not part of this build: the button highlights but ignores clicks.
-function HandleQuit(s) { titleButton(s, null); }
 
 function HandleStartProj(s) {
   if (!moveProj(s)) {

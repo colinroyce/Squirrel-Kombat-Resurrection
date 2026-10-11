@@ -123,7 +123,7 @@ Team: P0 (10,10,210,17), P2 (430,10,630,17), P1 (10,38,210,45), P3 (430,38,630,4
 Colours RGB (0xffff, 0x08c2, 0x06a2) and (0x8000, 0, 0).
 
 ## Controls (DefaultKeys; slot order 0 left, 1 jump, 2 right, 3 punch, 4 kick, 5 uppercut, 6 spin)
-- P1: A, W, D, S, E, Space, Q.   P2: keypad 4, 8, 6, 5, 9, 0, 7.
+- P1: A, W, D, S, E, Space, Q.   P2: keypad 4, 8, 6, 5, 9, 0, 7.   (This build's defaults differ, an addition: see README.)
 - CheckKeyDown per player:
   - jump: on ground → action2 3, vy = −17, sound 2; during uppercut (7) → power slam (9), sound Rand(7)+8.
   - left/right: walk, or turn if not facing that way.
@@ -736,7 +736,8 @@ sound 16 each; Space/Return/Enter → start. Then the fight starts with Fade(0).
   (Geneva), step 1, leading 8): lines start below the bottom, 18 px apart at x + 4, scroll up 1 px every 3 ticks; colour by line y:
   greys 0x84ec, 0x8000, 0xab54, 0xd400, 0xdd6b, 0xeaff, 0xf2d7, white in 10 px bands from each edge (top: < 11 … < 81; bottom: ≥ 470
   … ≥ 400); ends when the first line is above top − 3 − 12 × 18, or on a mouse click. Also used by the credits (STR# 129, 103 lines,
-  step 2). Geneva 10 is missing, so the text is blank in this build.
+  step 2). DoCredits: Fade(2), QuitHint, KillAllSprites, PICT 128 background, FadeBack(2), then
+  ScrollText(129, 103, (20,0)-(260,480), 10, 30, 1, 2, 8). Geneva 10 is drawn with the Geneva 9 stand-in in this build.
 
 ## High scores
 - Two tables (1 player / 2 players), 10 rows of {score, name (≤ 31 chars)}; DefaultPrefs: score 0, name "-". A score qualifies if it

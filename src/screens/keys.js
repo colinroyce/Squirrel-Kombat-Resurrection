@@ -19,6 +19,8 @@ const NAMES = {
   0x6b: 'F14', 0x6d: 'F10', 0x6f: 'F12', 0x72: 'Help', 0x73: 'Home', 0x74: 'Page Up', 0x75: 'Del',
   0x76: 'F4', 0x77: 'End', 0x78: 'F2', 0x79: 'Page Down', 0x7a: 'F1', 0x7b: 'Left Ar.',
   0x7c: 'Right Ar.', 0x7d: 'Down Ar.', 0x7e: 'Up Ar.',
+  // Not in the original: names for the Shift keys, now default uppercut keys.
+  0x38: 'L Shift', 0x3c: 'R Shift',
 };
 
 const ks = { done: 0, editing: -1, rects: Array.from({ length: 14 }, () => ({ top: 0, left: 0, bottom: 0, right: 0 })) };
@@ -103,7 +105,8 @@ async function editKey(slot) {
     if (e && e.what === 3) {
       const code = e.mac;
       const taken = prefs.keys.some(([, c], i) => c === code && i !== slot);
-      if (code !== 0x23 && code !== 0x71 && code !== 0x35 && !taken) {
+      // The original also refused P, its pause key; P no longer pauses (an addition), so it's allowed.
+      if (code !== 0x71 && code !== 0x35 && !taken) {
         const ch = e.key.length === 1 ? e.key : '';
         prefs.keys[slot] = [ch, code];
         savePrefs();

@@ -1,19 +1,20 @@
 // Not in the original: the pause screen's move guide (Colin's request). The original pause only
 // shows the PAUSED picture (PICT 9000) and waits; its move list was a separate "Special Moves"
 // text file. Here the pause shows a Controls page and one page per fighter, opening on the
-// fighter you're playing. Esc opens it too (the original quit on Esc), and a QUIT button in the
-// top left ends the fight. The arrow keys (or the walk keys) or the arrow buttons flip pages; P, F15 or Esc
+// fighter you're playing. Esc opens it (the original paused on P and quit on Esc), and a QUIT button in the
+// top left ends the fight. The arrow keys (or the walk keys) or the arrow buttons flip pages; Esc or F15
 // resumes, and so does a click anywhere else, as in the original. Combos are written with your
 // current keys, for facing right.
 
 import { TickCount, ptInRect, setRect, untilTick } from '../mac.js';
-import { cicnStrip, copyBits, drawPicture, drawString, fillRect, foreColor, sctx, stringWidth } from '../gfx.js';
+import { cicnStrip, copyBits, drawString, fillRect, foreColor, sctx, stringWidth } from '../gfx.js';
 import { CheckKey, FlushEvents, GetMouse, GetNextEvent } from '../input.js';
 import { BufferToScreen } from '../sprites.js';
 import { PlaySound } from '../sound.js';
 import { CHAR_NAMES } from '../templates.js';
 import { GetChosenChar, GetKey, sel } from '../state.js';
 import { keyName } from './keys.js';
+import { assets } from '../assets.js';
 
 // From the original "Special Moves" sheet (< back, > forward, p punch, k kick, u uppercut,
 // s spin kick, ^ jump), except Kathy's Flower Power: the sheet says >>s> but the game only
@@ -83,7 +84,7 @@ function drawControls() {
     ['Jump spin kick', `${keyName(1)} then ${keyName(6)} in the air`],
     ['Power slam', `${keyName(5)} then ${keyName(1)}`],
     ['Throw', `${keyName(5)} then ${keyName(3)}`],
-    ['Pause / resume', 'P or Esc'],
+    ['Pause / resume', 'Esc'],
     ['Quit the fight', 'QUIT button (top left, while paused)'],
   ];
   for (const [l, v] of rows) { row(y, l, v); y += 18; }
@@ -107,9 +108,18 @@ function drawFighter(ch) {
   centred(388, `Facing left, swap ${keyName(0)} and ${keyName(2)}. Tap the keys in order.`, white());
 }
 
+// PICT 9000 (160 x 45) says PAUSED over "HIT P TO UNPAUSE". P no longer pauses, so only its top 33
+// rows (the PAUSED word) are drawn, closed with its bottom border row.
+function drawPaused() {
+  const img = assets.pict.get(9000);
+  if (!img) return;
+  sctx.drawImage(img, 0, 0, 160, 33, 0xf0, 18, 160, 33);
+  sctx.drawImage(img, 0, 44, 160, 1, 0xf0, 51, 160, 1);
+}
+
 function draw(page) {
   BufferToScreen(); // the frozen fight underneath
-  drawPicture(sctx, 9000, setRect({}, 0xf0, 18, 400, 63));
+  drawPaused();
   box(PANEL, black(), red());
   if (page === 0) drawControls();
   else drawFighter(fighters()[page - 1]);
@@ -117,7 +127,7 @@ function draw(page) {
   drawString(sctx, QUIT.left + ((QUIT.right - QUIT.left - stringWidth('QUIT', 9, true)) >> 1), QUIT.top + 14, 'QUIT', 9, red(), true);
   box(PREV, black(), red());
   box(NEXT, black(), red());
-  centred(436, `${page + 1} / ${pageCount()}     ${keyName(0)} / ${keyName(2)} or arrow keys: flip pages     P / Esc: resume`, white());
+  centred(436, `${page + 1} / ${pageCount()}     ${keyName(0)} / ${keyName(2)} or arrow keys: flip pages     Esc: resume`, white());
   drawString(sctx, PREV.left + 15, PREV.top + 16, '<', 9, red(), true);
   drawString(sctx, NEXT.left + 16, NEXT.top + 16, '>', 9, red(), true);
 }
@@ -134,7 +144,7 @@ export async function PauseGuide() {
       const n = pageCount();
       let flip = 0;
       if (e.what === 3) {
-        if (e.mac === 0x23 || e.mac === 0x71 || e.mac === 0x35) break; // P, F15 or Esc resume
+        if (e.mac === 0x71 || e.mac === 0x35) break; // Esc or F15 resume
         if (e.mac === 0x7b || e.mac === GetKey(0)) flip = -1;
         if (e.mac === 0x7c || e.mac === GetKey(2)) flip = 1;
       } else if (e.what === 1) {
@@ -157,6 +167,6 @@ export async function PauseGuide() {
     await untilTick(TickCount() + 1);
   }
   FlushEvents();
-  while (CheckKey(0x71) || CheckKey(0x23) || CheckKey(0x35)) await untilTick(TickCount() + 1);
+  while (CheckKey(0x71) || CheckKey(0x35)) await untilTick(TickCount() + 1);
   return 'resume';
 }

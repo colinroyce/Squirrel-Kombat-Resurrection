@@ -308,9 +308,10 @@ function CheckMoves1() {
 async function CheckKeyDown() {
   const r0 = GetSpriteRect(0);
   // Cmd-Q quits the original application; there is nothing to quit to in a browser.
-  // The original quits the fight on Esc. Not in the original: Esc pauses like P, and quitting is
-  // the QUIT button on the pause guide (Colin's request).
-  if (CheckKey(0x35) || CheckKey(0x71) || CheckKey(0x23)) {
+  // The original quits the fight on Esc and pauses on P or F15. Not in the original (Colin's
+  // request): Esc pauses, P doesn't (it's player 2's jump), and quitting is the QUIT button on the
+  // pause guide.
+  if (CheckKey(0x35) || CheckKey(0x71)) {
     // The original draws PICT 9000 at (240, 218) and waits (WaitPause). Not in the original:
     // the pause shows the move guide instead (src/screens/pauseguide.js).
     const t = TickCount();
