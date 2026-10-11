@@ -21,6 +21,29 @@ function loadImage(url) {
 // loaded as extra 32x32 icons.
 const ADDED_CICN = { 30000: 'added/title-n.png' };
 
+// Brightened copies of icons, as [new id, source id]: every red raised by 0x44, with outlines
+// and see-through white unchanged. The title's RESURREKTION line uses them so it reads as new.
+const BRIGHT_CICN = [1120, 1122, 1123, 1124, 1125, 1126, 1129, 1130, 1134, 30000].map((id) => [id + 40000, id]);
+
+function brightenCicn(m) {
+  for (const [id, from] of BRIGHT_CICN) {
+    const [s, x, y, w, h, depth] = m.cicn[from];
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(assets.sheets[s], x, y, w, h, 0, 0, w, h);
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i] > 0 && d[i + 1] === 0 && d[i + 2] === 0) d[i] = Math.min(255, d[i] + 0x44);
+    }
+    ctx.putImageData(img, 0, 0);
+    assets.sheets.push(c);
+    m.cicn[id] = [assets.sheets.length - 1, 0, 0, w, h, depth];
+  }
+}
+
 export async function loadAssets(base, onProgress) {
   const m = await (await fetch(base + 'manifest.json')).json();
   assets.manifest = m;
@@ -43,6 +66,7 @@ export async function loadAssets(base, onProgress) {
   }
   let done = 0;
   await Promise.all(jobs.map((j) => j.then(() => onProgress && onProgress(++done, jobs.length))));
+  brightenCicn(m);
   return assets;
 }
 

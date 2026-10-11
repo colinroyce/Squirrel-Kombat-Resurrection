@@ -35,8 +35,9 @@ first. The CPU picks its fighter at random from Ed and Speedy.
 ## Additions to the original
 
 - The title screen has a second line, RESURREKTION, under SQUIRREL KOMBAT. Its letters fly in and
-  wobble like the original's and reuse the original letter tiles. The original has no N, so that
-  one is new art built from the original M (see `assets/added/`).
+  wobble like the original's and are brightened copies of the original letter tiles, so the new
+  line stands out. The original has no N, so that one is new art built from the original M (see
+  `assets/added/`).
 
 ## Controls
 
