@@ -177,6 +177,7 @@ function NewNinjaStars(r, oppIndex, num, dir) {
   T.ninjaStar.info[1] = oppIndex;
   T.ninjaStar.info[2] = num;
   T.ninjaStar.info[3] = num;
+  T.ninjaStar.dir = dir;
   const rect = { ...r };
   insetRect(rect, 8, 8);
   if (dir === 0) {
