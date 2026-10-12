@@ -12,7 +12,7 @@ import { CheckKey, FlushEvents, GetMouse, GetNextEvent } from '../input.js';
 import { BufferToScreen } from '../sprites.js';
 import { PlaySound } from '../sound.js';
 import { CHAR_NAMES } from '../templates.js';
-import { GetChosenChar, GetKey, sel } from '../state.js';
+import { GetChosenChar, GetKey, GetNumPlayers, sel } from '../state.js';
 import { keyName } from './keys.js';
 import { assets } from '../assets.js';
 
@@ -40,7 +40,10 @@ const NOTES = {
 };
 
 const SLOT = { '<': 0, '^': 1, '>': 2, p: 3, k: 4, u: 5, s: 6 };
-const keys = (combo) => [...combo].map((c) => keyName(SLOT[c])).join(' ');
+const keys = (combo, base = 0) => [...combo].map((c) => keyName(base + SLOT[c])).join(' ');
+// With two players each row shows both players' keys (player 2's slots are 7–13).
+const two = () => GetNumPlayers() === 2;
+const P2X = 440;
 
 // Page 0 is Controls, then one page per fighter (Military Muskrat only once he's unlocked).
 const fighters = () => Array.from({ length: sel.numChars }, (_, i) => i);
@@ -65,47 +68,63 @@ function centred(y, text, color, bold = false) {
   drawString(sctx, 320 - (stringWidth(text, 9, bold) >> 1), y, text, 9, color, bold);
 }
 
-function row(y, label, value) {
+function row(y, label, value, value2) {
   drawString(sctx, 112, y, label, 9, white());
   drawString(sctx, 300, y, value, 9, yellow());
+  if (value2 !== undefined) drawString(sctx, P2X, y, value2, 9, yellow());
+}
+
+function heads(y) {
+  if (!two()) return;
+  drawString(sctx, 300, y, 'PLAYER 1', 9, red(), true);
+  drawString(sctx, P2X, y, 'PLAYER 2', 9, red(), true);
 }
 
 function drawControls() {
   centred(108, 'CONTROLS', red(), true);
-  let y = 132;
+  heads(124);
+  let y = two() ? 142 : 132;
+  const air = two() ? '' : ' in the air';
   const rows = [
-    ['Walk left / right', `${keyName(0)} / ${keyName(2)}`],
-    ['Jump', keyName(1)],
-    ['Punch', keyName(3)],
-    ['Kick', keyName(4)],
-    ['Uppercut', keyName(5)],
-    ['Spin kick', keyName(6)],
-    ['Flying side kick', `${keyName(1)} then ${keyName(4)} in the air`],
-    ['Jump spin kick', `${keyName(1)} then ${keyName(6)} in the air`],
-    ['Power slam', `${keyName(5)} then ${keyName(1)}`],
-    ['Throw', `${keyName(5)} then ${keyName(3)}`],
-    ['Pause / resume', 'Esc'],
-    ['Quit the fight', 'QUIT button (top left, while paused)'],
+    ['Walk left / right', (b) => `${keyName(b)} / ${keyName(b + 2)}`],
+    ['Jump', (b) => keyName(b + 1)],
+    ['Punch', (b) => keyName(b + 3)],
+    ['Kick', (b) => keyName(b + 4)],
+    ['Uppercut', (b) => keyName(b + 5)],
+    ['Spin kick', (b) => keyName(b + 6)],
+    [two() ? 'Flying side kick (air)' : 'Flying side kick', (b) => `${keyName(b + 1)} then ${keyName(b + 4)}${air}`],
+    [two() ? 'Jump spin kick (air)' : 'Jump spin kick', (b) => `${keyName(b + 1)} then ${keyName(b + 6)}${air}`],
+    ['Power slam', (b) => `${keyName(b + 5)} then ${keyName(b + 1)}`],
+    ['Throw', (b) => `${keyName(b + 5)} then ${keyName(b + 3)}`],
   ];
-  for (const [l, v] of rows) { row(y, l, v); y += 18; }
+  for (const [l, v] of rows) { row(y, l, v(0), two() ? v(7) : undefined); y += 18; }
+  row(y, 'Pause / resume', 'Esc'); y += 18;
+  row(y, 'Quit the fight', 'QUIT button (top left, while paused)'); y += 18;
   y += 6;
   centred(y, 'Special moves: tap the keys in order (holding one counts once).', white());
   centred(y + 14, 'Each fighter\'s page below shows them for facing right;', white());
-  centred(y + 28, `facing left, swap ${keyName(0)} and ${keyName(2)}.`, white());
+  centred(y + 28, `facing left, swap ${swapText()}.`, white());
+}
+
+function swapText() {
+  const p1 = `${keyName(0)} and ${keyName(2)}`;
+  return two() ? `${p1} (or ${keyName(7)} and ${keyName(9)})` : p1;
 }
 
 function drawFighter(ch) {
   const icon = cicnStrip(5000, 12, 32, 32);
   copyBits(sctx, icon, setRect({}, ch * 32, 0, ch * 32 + 32, 32), setRect({}, 304, 86, 336, 118));
   centred(134, CHAR_NAMES[ch], red(), true);
+  heads(152);
   let y = 166;
+  if (two()) y += 8;
   for (const [name, combo] of MOVES[ch]) {
-    row(y, name, keys(combo));
+    row(y, name, keys(combo), two() ? keys(combo, 7) : undefined);
     y += 22;
   }
   y += 8;
   for (const line of NOTES[ch] || []) { centred(y, line, white()); y += 14; }
-  centred(388, `Facing left, swap ${keyName(0)} and ${keyName(2)}. Tap the keys in order.`, white());
+  centred(388, `Facing left, swap ${swapText()}. Tap the keys in order.`, white());
 }
 
 // PICT 9000 (160 x 45) says PAUSED over "HIT P TO UNPAUSE". P no longer pauses, so only its top 33
@@ -145,8 +164,8 @@ export async function PauseGuide() {
       let flip = 0;
       if (e.what === 3) {
         if (e.mac === 0x71 || e.mac === 0x35) break; // Esc or F15 resume
-        if (e.mac === 0x7b || e.mac === GetKey(0)) flip = -1;
-        if (e.mac === 0x7c || e.mac === GetKey(2)) flip = 1;
+        if (e.mac === 0x7b || e.mac === GetKey(0) || (two() && e.mac === GetKey(7))) flip = -1;
+        if (e.mac === 0x7c || e.mac === GetKey(2) || (two() && e.mac === GetKey(9))) flip = 1;
       } else if (e.what === 1) {
         const m = GetMouse();
         if (ptInRect(m.h, m.v, QUIT)) {

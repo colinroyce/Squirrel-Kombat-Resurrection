@@ -37,7 +37,8 @@ export function loadPrefs() {
   }
   SetWantsSound(prefs.sound);
   SetWantsMusic(prefs.music);
-  if (prefs.muskrat) sel.numChars = 12; // Not in the original: see UnlockMuskrat
+  if (prefs.muskrat || prefs.cheatMuskrat) sel.numChars = 12; // Not in the original: see UnlockMuskrat
+  sel.superBlood = prefs.cheatBlood ? 1 : 0; // Not in the original: cheats are remembered (see SetSuperBlood)
 }
 
 export function savePrefs() {
@@ -93,10 +94,31 @@ export function ChooseRandomScene() {
   else sel.scene = Rand(5);
 }
 
-// Not in the original: Military Muskrat is unlocked by winning the Tournament (Colin's choice,
-// instead of the original's key code), and the browser remembers it.
+// Not in the original: Military Muskrat is unlocked by winning the Tournament (Colin's choice), and
+// the browser remembers it. The original's key code also unlocks him, as a cheat (SetMuskratCheat).
 export function UnlockMuskrat() {
   prefs.muskrat = 1;
   sel.numChars = 12;
+  savePrefs();
+}
+
+// ---- cheats (the original's two codes, also switched on the Cheats page) ---------------------------
+// Not in the original: the original forgets both when it quits; here they're remembered, like the
+// other options, and the Cheats page in Options (src/screens/cheats.js) switches them.
+
+// Super blood (FIREMONKEY on the title screen): bigger blood bursts.
+export function SetSuperBlood(v) {
+  sel.superBlood = v;
+  prefs.cheatBlood = v;
+  savePrefs();
+}
+
+// Military Muskrat on the character screen (the secret key code). Winning the Tournament unlocks
+// him for good, whatever this is set to.
+export const MuskratWon = () => !!prefs.muskrat;
+export const GetMuskratCheat = () => (prefs.cheatMuskrat ? 1 : 0);
+export function SetMuskratCheat(v) {
+  prefs.cheatMuskrat = v;
+  if (!prefs.muskrat) sel.numChars = v ? 12 : 11;
   savePrefs();
 }

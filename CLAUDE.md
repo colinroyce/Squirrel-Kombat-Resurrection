@@ -36,7 +36,9 @@ public.
    (`fit()` in `src/main.js`).
 3. All behaviour comes from disassembling the original PowerPC code.
 4. Default controls come from the binary (`DefaultKeys`).
-5. No cheats for now: the FIREMONKEY super-blood code, the secret-character code, and so on.
+5. Cheats: the original's two codes (FIREMONKEY super blood on the title screen, the secret-character
+   key code on the character screen) work as in the original, and (an addition, Colin's choice) are
+   also switches on a Cheats page in Options (`src/screens/cheats.js`), remembered in the browser.
 6. It's a browser game that runs straight from the repo.
 7. Fonts:
    - Geneva 9 uses "Geneva 9.1", a FontStruct remake under the OFL, with its documented changes
@@ -51,9 +53,9 @@ public.
 10. Blood defaults to **yellow**, as the original's `DefaultPrefs` sets it. Red blood and the
     dripping cursor appear only with Options → Blood → ON. This matches the original, so leave it.
 11. **Military Muskrat is unlocked by winning the Tournament** (Colin's choice, an addition).
-    - The original's way is a key code on the character screen: the first six control presses
-      left, jump, right, punch, uppercut, spin (A W D S Space Q by default). Colin chose not to
-      use it. See docs/SPEC.md "Military Muskrat".
+    - The original's way, a key code on the character screen (six presses in a row: left, jump,
+      right, punch, uppercut, spin; A W D S L Shift Q by default), also works, as a cheat (see 5).
+      See docs/SPEC.md "Military Muskrat".
     - The original Tournament can't be won (its 12th place is left empty), so Colin chose to make
       Military Muskrat the 12th, final opponent. Beating him unlocks him (`UnlockMuskrat` in
       `src/state.js`, remembered in the browser). `?debug` also unlocks him.
@@ -76,10 +78,15 @@ Working:
     the name entry after a Tournament and the title's SCORES screen
   - Practice mode (`src/fight/practice.js`): the training dummy and the timed tutorial messages
   - the credits (`DoCredits` in `src/screens/title.js`)
+  - 2 Players in ONE ON ONE: player 2's keys and special moves (`CheckKeyDown`, `CheckMoves(n)` in
+    `src/fight/game.js`), and their keys on the pause guide
+  - split screen when the two players are more than a screen apart (`HandleDoubleCamera` in
+    `src/camera.js`, `RenderSpritesSplit` in `src/sprites.js`)
 
 Shown but inactive:
-- Character select: 2 Players and Two on Two.
-- Cheats, the original's alert dialogs, split screen, and player 2's keyboard controls in fights.
+- Character select: Two on Two, and PRACTICE / TOURNAMENT with 2 Players (team fights; `canStart`
+  in `src/screens/select.js`).
+- The original's alert dialogs.
 
 Notes:
 - The character screen opens in TOURNAMENT mode, as the original does, so click ONE ON ONE first.
@@ -153,6 +160,7 @@ Code map (`src/`):
   - `tournament.js` — the Tournament ladder and win screen (`ScrollText`)
   - `scores.js` — high score tables, the SCORES screen and the name entry
   - `pauseguide.js` — the pause screen's move guide (an addition)
+  - `cheats.js` — the Cheats page in Options (an addition)
 - **`fight/`:**
   - `game.js` — `CreatePlayers`, rounds, `Run`/`MyRun`, the key recorder and `CheckMoves1`,
     pause, `HandleDeadPlayer`
@@ -225,6 +233,11 @@ capstone, and a patched deark.
   rebuilds; the contents and layout are the game's own DLOG/DITL 999 (`OpenScoreDialog`).
 - **High scores and the Muskrat unlock are saved in the browser** (the original used its
   preferences file).
+- **The Cheats page** (`src/screens/cheats.js`, opened by a CHEATS button under KEYS in Options):
+  switches for super blood and Military Muskrat, each with its original code written out. The
+  button's art is built from the original buttons' letters (`assets/added/cheats-button.png`, made
+  by `tools/extract/cheats_button.py`). Cheats are remembered in the browser (the original forgot
+  them on quitting).
 - **No QUIT button on the title screen** (Colin's choice): a web page has nothing to quit to
   (`NewTitleScreenSprites` in `src/screens/title.js`).
 - **No music during fights**: the theme plays on the title, character and scene screens and stops
@@ -236,6 +249,8 @@ capstone, and a patched deark.
   unlocked), flipped with the arrow or walk keys or the on-screen buttons. The original pause only
   showed PICT 9000. The original paused on P and quit on Esc; now only Esc pauses (P is player 2's
   jump) and quitting a fight is the guide's QUIT button.
+- **The pause picture shows only PAUSED**: PICT 9000's "HIT P TO UNPAUSE" line is cut off, since P no
+  longer pauses (`drawPaused` in `src/screens/pauseguide.js`).
 - **New default keys** (`DEFAULT_KEYS` in `src/state.js`): player 1's uppercut is Left Shift (was
   Space); player 2 is L ' P ; [ O and Right Shift (was the number pad). Right Shift gets its own key
   code (`src/input.js`). Saved keys still on an original default move to the new ones.

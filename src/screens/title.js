@@ -5,9 +5,9 @@ import { drawPicture, fillBackWithPict, sctx } from '../gfx.js';
 import { Button, CheckKey, GetMouse } from '../input.js';
 import { DontHandleCamera, GetSplit, HandleCamera, HandleCameraSplit, OffCamera, SetRenderOptions } from '../camera.js';
 import { DrawSprites, GetNumSprites, HandleSprites, KillAllSprites, KillSprite, NewSpriteFromCICN } from '../sprites.js';
-import { HandleSparks } from '../sparks.js';
+import { HandleSparks, MakeSparks } from '../sparks.js';
 import { PlayMusic, PlaySound } from '../sound.js';
-import { DontDrawLifeBars, QuitHint, StartHint } from '../hud.js';
+import { DontDrawLifeBars, QuitHint, StartHint, SuperBloodHint } from '../hud.js';
 import { Fade, FadeBack, GetFadeNormal } from '../fade.js';
 import { CHARS, T } from '../templates.js';
 import { NewCursorSprite, OnScreen, nextFrame } from '../common.js';
@@ -15,8 +15,9 @@ import { OpenOptions } from './options.js';
 import { OpenSelection } from './select.js';
 import { DoHighScores } from './scores.js';
 import { ScrollText } from './tournament.js';
+import { GetSuperBlood, SetSuperBlood } from '../state.js';
 
-const title = { message: 0 };
+const title = { message: 0, code: 0 };
 
 export function SetGameMessage(m) {
   title.message = m;
@@ -103,7 +104,42 @@ async function DoCredits() {
 function CheckTitleKeyDown() {
   // Esc / Cmd-Q quit the original application; there is nothing to quit to in a browser.
   if (CheckKey(0x24) || CheckKey(0x4c)) title.message = 2;
-  // The FIREMONKEY super-blood code is not part of this build yet.
+  // F-I-R-E-M-O-N-K-E-Y toggles super blood. Each letter held moves the code on from the letter
+  // before it (or keeps it there); a letter out of place starts it over. Other keys don't count.
+  const step = (key, from, to) => {
+    if (!CheckKey(key)) return;
+    title.code = title.code === from ? to : title.code === to ? to : 0;
+  };
+  if (CheckKey(0x03)) title.code = 1; // F
+  step(0x22, 1, 2); // I
+  step(0x0f, 2, 3); // R
+  if (CheckKey(0x0e)) { // E (the 4th and the 9th letter)
+    if (title.code === 3) title.code = 4;
+    else if (title.code === 8) title.code = 9;
+    else if (title.code !== 4 && title.code !== 9) title.code = 0;
+  }
+  step(0x2e, 4, 5); // M
+  step(0x1f, 5, 6); // O
+  step(0x2d, 6, 7); // N
+  step(0x28, 7, 8); // K
+  if (CheckKey(0x10)) { // Y
+    if (title.code === 9) {
+      if (GetSuperBlood() === 0) {
+        SetSuperBlood(1);
+        const m = GetMouse();
+        const h = m.h + 0x10, v = m.v + 0x10;
+        MakeSparks(h, v, 2, 0x32, 0x20, 1, 0xcd, 1, 3, 3);
+        MakeSparks(h, v, 3, 0x32, 0x20, 2, 0xcd, 1, 3, 3);
+        MakeSparks(h, v, 0, 0x32, 0x20, 4, 0xcd, 1, 3, 3);
+        MakeSparks(h, v, 1, 0x32, 0x20, 4, 0xcd, 1, 3, 3);
+        SuperBloodHint(true);
+      } else {
+        SetSuperBlood(0);
+        SuperBloodHint(false);
+      }
+    }
+    title.code = 0;
+  }
 }
 
 export function NewTitleScreenSprites() {

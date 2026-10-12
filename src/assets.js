@@ -20,6 +20,8 @@ function loadImage(url) {
 // Art made for the Resurrection that the original does not have (see assets/added/README.md),
 // loaded as extra 32x32 icons.
 const ADDED_CICN = { 30000: 'added/title-n.png' };
+// ... and as extra pictures (PICT).
+const ADDED_PICT = { 30001: 'added/cheats-button.png' };
 
 // Brightened copies of icons, as [new id, source id]: every red raised by 0x44, with outlines
 // and see-through white unchanged. The title's RESURREKTION line uses them so it reads as new.
@@ -56,6 +58,9 @@ export async function loadAssets(base, onProgress) {
   });
   for (const [id, info] of Object.entries(m.pict)) {
     jobs.push(loadImage(base + info.file).then((img) => { assets.pict.set(Number(id), img); }));
+  }
+  for (const [id, f] of Object.entries(ADDED_PICT)) {
+    jobs.push(loadImage(base + f).then((img) => { assets.pict.set(Number(id), img); }));
   }
   jobs.push(fetch(base + 'text.json').then((r) => r.json()).then((t) => { assets.text = t; }));
   for (const size of [9, 10]) {

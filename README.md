@@ -33,6 +33,8 @@ Since then:
 - Pausing (P) shows a move guide: the controls and every fighter's special moves in your own keys,
   one page each, flipped with the arrow keys. (An addition: in 1999 the moves were in a separate
   text file.)
+- 2 Players in One on One: click 2 Players on the character screen; player 2 picks with their
+  walk keys (L and '). When the fighters get more than a screen apart, the screen splits in two.
 - Practice mode: hit the training dummy (nobody gets hurt) while tutorial tips cycle above.
 - Credits: click the CREDITS corner of the title screen.
 - The title screen has no QUIT button (an addition: there's nothing to quit in a browser).
@@ -40,8 +42,8 @@ Since then:
 Everything else on these screens is shown and animates as in the original, but does nothing when
 clicked yet:
 
-- 2 Players and Two on Two
-- Cheat codes, alert dialogs, and split screen
+- Two on Two, and Practice or Tournament with 2 Players
+- Alert dialogs
 
 The character screen opens in Tournament mode, as the original does, so click **ONE ON ONE**
 first. The CPU picks its fighter at random.
@@ -52,8 +54,12 @@ first. The CPU picks its fighter at random.
   wobble like the original's and are brightened copies of the original letter tiles, so the new
   line stands out. The original has no N, so that one is new art built from the original M (see
   `assets/added/`).
-- Military Muskrat is unlocked by winning the Tournament rather than by the original's secret
-  key code. For testing, adding `?debug` to the address unlocks him.
+- Military Muskrat is unlocked by winning the Tournament, or by the original's secret key code,
+  or on the Cheats page. For testing, adding `?debug` to the address unlocks him.
+- Cheats aren't hidden: Options → CHEATS switches super blood and Military Muskrat on and off, and
+  shows the original's codes (type FIREMONKEY on the title screen for super blood; press left,
+  jump, right, punch, uppercut, spin kick on the character screen for Military Muskrat). The
+  CHEATS button is new art made from the original buttons' letters. Cheats are remembered.
 - The original Tournament can't be won (its last place on the ladder is left empty), so Military
   Muskrat is the final opponent there.
 - The high-score name window is a plain rebuild: in 1999 Mac OS drew its frame and button. Its

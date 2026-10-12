@@ -63,6 +63,8 @@ export const T = {
   diff: init(136, 3, 2, 100, 32, 16, { info5: 160, action1: 0 }),
   time: init(140, 3, 2, 100, 32, 20, { info5: 208, action1: 0 }),
   keys: init(145, 3, 2, 100, 32, 24, { info5: 256, action1: 0 }),
+  // Not in the original: the CHEATS button below KEYS (art: assets/added/cheats-button.png).
+  cheats: init(30001, 3, 2, 100, 32, 28, { info5: 304, action1: 0 }),
   subOn: init(131, 3, 2, 100, 32, 5, { action1: 0 }),
   subOff: init(132, 3, 2, 100, 32, 5, { action1: 0 }),
   subYellow: init(135, 3, 2, 100, 32, 5, { action1: 0 }),

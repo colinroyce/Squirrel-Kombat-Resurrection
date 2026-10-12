@@ -62,8 +62,10 @@ export async function HandleNinja(s) {
   KeepSpriteOnScreen(s);
 }
 
-// The four specials (CheckMoves1 uses n = 0; DoSpecialMove the CPU's slot).
-export function NinjaSpecial(n, move) {
+// The four specials (CheckMoves1 / CheckMoves2 use n = 0 / 1; DoSpecialMove the CPU's slot).
+// `park` is the slot the Decoy parks him above: CheckMoves1 uses 1 and CheckMoves2 uses 0 (the
+// other player); DoSpecialMove always uses 1.
+export function NinjaSpecial(n, move, park = 1) {
   const r = GetSpriteRect(n);
   if (GetSpriteAction2(n) === 5) return;
   if (move === 0) {
@@ -82,8 +84,8 @@ export function NinjaSpecial(n, move) {
     if (OnSurface(r, n)) {
       NewNinjaDecoy(n);
       SetSpriteAction2(n, 0xf);
-      // Original quirk: parks him above sprite 1's spot (the opponent only when he is slot 0).
-      const p = GetSpriteRect(1);
+      // Original quirk: the CPU parks him above sprite 1's spot, which is its own.
+      const p = GetSpriteRect(park);
       p.top = 0xa8;
       p.bottom = 200;
       SetSpriteInfo(n, 7, 0);

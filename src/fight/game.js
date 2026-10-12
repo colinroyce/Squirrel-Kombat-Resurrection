@@ -143,165 +143,187 @@ export async function Run() {
 
 // ---- special-move key recorder ------------------------------------------------------------------
 
-const rec = { ring: [-1, -1, -1, -1, -1], idx: 0, last: -1 };
+// One 5-key ring per player (RecordKey1 / RecordKey2 and their globals).
+const recs = [0, 1].map(() => ({ ring: [-1, -1, -1, -1, -1], idx: 0, last: -1 }));
+const rec = recs[0];
 
 export function ClearPattern1() {
-  rec.ring.fill(-1);
-  rec.idx = 0;
+  recs[0].ring.fill(-1);
+  recs[0].idx = 0;
+}
+
+function ClearPattern2() {
+  recs[1].ring.fill(-1);
+  recs[1].idx = 0;
 }
 
 export function InitKeyRecorder() {
   ClearPattern1();
-  rec.last = -1;
+  recs[0].last = -1;
+  ClearPattern2();
+  recs[1].last = -1;
 }
 
-function RecordKey1(k) {
-  if (k !== rec.last) {
-    rec.ring[rec.idx] = k;
-    rec.idx += 1;
-    rec.last = k;
-    if (rec.idx > 4) rec.idx = 0;
+function recordKey(r, k) {
+  if (k !== r.last) {
+    r.ring[r.idx] = k;
+    r.idx += 1;
+    r.last = k;
+    if (r.idx > 4) r.idx = 0;
   }
 }
+const RecordKey1 = (k) => recordKey(recs[0], k);
+const RecordKey2 = (k) => recordKey(recs[1], k);
 
 // Does the pattern appear in the ring, starting at any of its 5 positions (wrapping)?
-function CheckPattern1(...pat) {
+function checkPattern(r, pat) {
   for (let start = 0; start < 5; start++) {
     let ok = true;
     for (let i = 0; i < pat.length; i++) {
-      if (rec.ring[(start + i) % 5] !== pat[i]) { ok = false; break; }
+      if (r.ring[(start + i) % 5] !== pat[i]) { ok = false; break; }
     }
     if (ok) return 1;
   }
   return 0;
 }
+const CheckPattern1 = (...pat) => checkPattern(recs[0], pat);
+const CheckPattern2 = (...pat) => checkPattern(recs[1], pat);
 
-function CheckMoves1() {
-  const r = GetSpriteRect(0);
-  const a2 = () => GetSpriteAction2(0);
-  const ch = GetChosenChar(0);
+// CheckMoves1 (player 1, slot 0) and CheckMoves2 (player 2, slot 1) are the same apart from the
+// quirks marked below, so both run this with their slot.
+function CheckMoves(n) {
+  const CheckPattern = n === 0 ? CheckPattern1 : CheckPattern2;
+  const ClearPattern = n === 0 ? ClearPattern1 : ClearPattern2;
+  const r = GetSpriteRect(n);
+  const a2 = () => GetSpriteAction2(n);
+  const ch = GetChosenChar(n);
   if (ch === 0) {
-    if (CheckPattern1(3, 4, 3, 5)) {
-      ClearPattern1();
-      if (a2() !== 5) { SetSpriteAction2(0, 0xd); SetSpriteInfo(0, 5, 0); SetSpriteInfo(0, 7, 0); }
-    } else if (CheckPattern1(0, 0, 2, 5) || CheckPattern1(2, 2, 0, 5)) {
-      ClearPattern1();
-      if (a2() !== 5) { SetSpriteAction2(0, 0xe); SetSpriteInfo(0, 5, 0); }
-    } else if (CheckPattern1(0, 3, 2, 4, 2) || CheckPattern1(2, 3, 0, 4, 0)) {
-      ClearPattern1();
-      if (a2() !== 5) { SetSpriteAction2(0, 0xf); NewPurpleBeam(r, GetSpriteInfo(0, 1), 0, 0); }
-    } else if (CheckPattern1(2, 2, 3, 3) || CheckPattern1(0, 0, 3, 3)) {
-      ClearPattern1();
-      if (a2() !== 5) { SetSpriteAction2(0, 0x10); NewSpin3Ball(r, GetSpriteInfo(0, 1), 0, 0); }
+    // Original quirk: player 1 clears info 7 on Teleport, player 2 on Tri Ball instead.
+    if (CheckPattern(3, 4, 3, 5)) {
+      ClearPattern();
+      if (a2() !== 5) { SetSpriteAction2(n, 0xd); SetSpriteInfo(n, 5, 0); if (n === 0) SetSpriteInfo(n, 7, 0); }
+    } else if (CheckPattern(0, 0, 2, 5) || CheckPattern(2, 2, 0, 5)) {
+      ClearPattern();
+      if (a2() !== 5) { SetSpriteAction2(n, 0xe); SetSpriteInfo(n, 5, 0); if (n === 1) SetSpriteInfo(n, 7, 0); }
+    } else if (CheckPattern(0, 3, 2, 4, 2) || CheckPattern(2, 3, 0, 4, 0)) {
+      ClearPattern();
+      if (a2() !== 5) { SetSpriteAction2(n, 0xf); NewPurpleBeam(r, GetSpriteInfo(n, 1), n, n); }
+    } else if (CheckPattern(2, 2, 3, 3) || CheckPattern(0, 0, 3, 3)) {
+      ClearPattern();
+      if (a2() !== 5) { SetSpriteAction2(n, 0x10); NewSpin3Ball(r, GetSpriteInfo(n, 1), n, n); }
     }
   } else if (ch === 1) {
     const free = () => a2() !== 5 && a2() !== 0xd && a2() !== 0xe && a2() !== 0xf;
-    if (CheckPattern1(0, 2, 3) || CheckPattern1(2, 0, 3)) {
-      ClearPattern1();
-      if (free()) { SetSpriteAction2(0, 0xd); SetSpriteInfo(0, 5, 0); }
-    } else if (CheckPattern1(0, 0, 2, 4) || CheckPattern1(2, 2, 0, 4)) {
-      ClearPattern1();
-      if (free()) { SetSpriteAction2(0, 0xe); SetSpriteInfo(0, 5, 0); }
-    } else if (CheckPattern1(0, 5, 0, 2, 4) || CheckPattern1(2, 5, 2, 0, 4)) {
-      ClearPattern1();
-      if (free()) { SetSpriteAction2(0, 0xf); SetSpriteInfo(0, 5, 0); }
-    } else if (CheckPattern1(0, 0, 2, 2, 6) || CheckPattern1(2, 2, 0, 0, 6)) {
-      ClearPattern1();
-      if (free()) NewFireBall(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
+    if (CheckPattern(0, 2, 3) || CheckPattern(2, 0, 3)) {
+      ClearPattern();
+      if (free()) { SetSpriteAction2(n, 0xd); SetSpriteInfo(n, 5, 0); }
+    } else if (CheckPattern(0, 0, 2, 4) || CheckPattern(2, 2, 0, 4)) {
+      ClearPattern();
+      if (free()) { SetSpriteAction2(n, 0xe); SetSpriteInfo(n, 5, 0); }
+    } else if (CheckPattern(0, 5, 0, 2, 4) || CheckPattern(2, 5, 2, 0, 4)) {
+      ClearPattern();
+      if (free()) { SetSpriteAction2(n, 0xf); SetSpriteInfo(n, 5, 0); }
+    } else if (CheckPattern(0, 0, 2, 2, 6) || CheckPattern(2, 2, 0, 0, 6)) {
+      ClearPattern();
+      // Original quirk: for player 2 only "not already hurt" (5) is checked.
+      if (n === 0 ? free() : a2() !== 5) NewFireBall(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
     }
   } else if (ch === 2) {
-    if (CheckPattern1(2, 2, 3, 5) || CheckPattern1(0, 0, 3, 5)) {
-      ClearPattern1();
-      if (a2() !== 5) NewIceBlast(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
-    } else if (CheckPattern1(0, 0, 2, 4) || CheckPattern1(2, 2, 0, 4)) {
-      ClearPattern1();
-      if (a2() !== 5) NewIceFist(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
-    } else if (CheckPattern1(3, 4, 5)) {
-      ClearPattern1();
-      if (OnSurface(r, 0) && a2() !== 5) {
-        NewIceColumn(r, 0, 0);
-        SetSpriteAction2(0, 0xf);
-        SetSpriteInfo(0, 5, 0);
+    if (CheckPattern(2, 2, 3, 5) || CheckPattern(0, 0, 3, 5)) {
+      ClearPattern();
+      if (a2() !== 5) NewIceBlast(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
+    } else if (CheckPattern(0, 0, 2, 4) || CheckPattern(2, 2, 0, 4)) {
+      ClearPattern();
+      if (a2() !== 5) NewIceFist(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
+    } else if (CheckPattern(3, 4, 5)) {
+      ClearPattern();
+      if (OnSurface(r, n) && a2() !== 5) {
+        NewIceColumn(r, n, 0);
+        SetSpriteAction2(n, 0xf);
+        SetSpriteInfo(n, 5, 0);
       }
-    } else if (CheckPattern1(3, 6, 1)) {
-      ClearPattern1();
-      if (a2() !== 5) NewIceBlast2(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    } else if (CheckPattern(3, 6, 1)) {
+      ClearPattern();
+      if (a2() !== 5) NewIceBlast2(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
     }
   } else if (ch === 3) {
-    if (CheckPattern1(0, 1, 0, 2, 3) || CheckPattern1(2, 1, 2, 0, 3)) {
-      ClearPattern1();
-      if (a2() !== 5) { SetSpriteAction2(0, 0xd); SetSpriteInfo(0, 5, 0xb); }
-    } else if (CheckPattern1(0, 0, 2, 2, 5) || CheckPattern1(2, 2, 0, 0, 5)) {
-      ClearPattern1();
-      if (a2() !== 5) NewInvBoxGlove(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
-    } else if (CheckPattern1(0, 0, 2, 2, 3) || CheckPattern1(2, 2, 0, 0, 3)) {
-      ClearPattern1();
-      if (a2() !== 5) NewInvFireBall(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
-    } else if (CheckPattern1(0, 0, 2, 2, 4) || CheckPattern1(2, 2, 0, 0, 4)) {
-      ClearPattern1();
-      // Original quirk: tests sprite 1's state, not player 1's.
-      if (GetSpriteAction2(1) !== 5) NewInvIceBall(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0), 0);
+    if (CheckPattern(0, 1, 0, 2, 3) || CheckPattern(2, 1, 2, 0, 3)) {
+      ClearPattern();
+      if (a2() !== 5) { SetSpriteAction2(n, 0xd); SetSpriteInfo(n, 5, 0xb); }
+    } else if (CheckPattern(0, 0, 2, 2, 5) || CheckPattern(2, 2, 0, 0, 5)) {
+      ClearPattern();
+      if (a2() !== 5) NewInvBoxGlove(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (CheckPattern(0, 0, 2, 2, 3) || CheckPattern(2, 2, 0, 0, 3)) {
+      ClearPattern();
+      if (a2() !== 5) NewInvFireBall(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (CheckPattern(0, 0, 2, 2, 4) || CheckPattern(2, 2, 0, 0, 4)) {
+      ClearPattern();
+      // Original quirk: both players test sprite 1's state (player 2's own, not player 1's).
+      if (GetSpriteAction2(1) !== 5) NewInvIceBall(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n), n);
     }
   } else if (ch === 4) {
-    if (CheckPattern1(0, 0, 0, 2, 5) || CheckPattern1(2, 2, 2, 0, 5)) { ClearPattern1(); NinjaSpecial(0, 0); }
-    else if (CheckPattern1(0, 3, 4, 4, 3) || CheckPattern1(2, 3, 4, 4, 3)) { ClearPattern1(); NinjaSpecial(0, 1); }
-    else if (CheckPattern1(0, 0, 0, 4, 0) || CheckPattern1(2, 2, 2, 4, 2)) { ClearPattern1(); NinjaSpecial(0, 2); }
-    else if (CheckPattern1(3, 3, 4, 0, 0) || CheckPattern1(3, 3, 4, 2, 2)) { ClearPattern1(); NinjaSpecial(0, 3); }
+    if (CheckPattern(0, 0, 0, 2, 5) || CheckPattern(2, 2, 2, 0, 5)) { ClearPattern(); NinjaSpecial(n, 0); }
+    else if (CheckPattern(0, 3, 4, 4, 3) || CheckPattern(2, 3, 4, 4, 3)) { ClearPattern(); NinjaSpecial(n, 1); }
+    else if (CheckPattern(0, 0, 0, 4, 0) || CheckPattern(2, 2, 2, 4, 2)) { ClearPattern(); NinjaSpecial(n, 2); }
+    else if (CheckPattern(3, 3, 4, 0, 0) || CheckPattern(3, 3, 4, 2, 2)) { ClearPattern(); NinjaSpecial(n, 3, 1 - n); }
   } else if (ch === 5) {
-    if (CheckPattern1(0, 0, 2, 2, 5) || CheckPattern1(2, 2, 0, 0, 5)) { ClearPattern1(); MechSpecial(0, 0); }
-    else if (CheckPattern1(0, 0, 0, 2, 6) || CheckPattern1(2, 2, 2, 0, 6)) { ClearPattern1(); MechSpecial(0, 1); }
-    else if (CheckPattern1(0, 0, 3, 1) || CheckPattern1(2, 2, 3, 1)) { ClearPattern1(); MechSpecial(0, 2); }
-    else if (CheckPattern1(0, 2, 2, 4) || CheckPattern1(2, 0, 0, 4)) { ClearPattern1(); MechSpecial(0, 3); }
+    if (CheckPattern(0, 0, 2, 2, 5) || CheckPattern(2, 2, 0, 0, 5)) { ClearPattern(); MechSpecial(n, 0); }
+    else if (CheckPattern(0, 0, 0, 2, 6) || CheckPattern(2, 2, 2, 0, 6)) { ClearPattern(); MechSpecial(n, 1); }
+    else if (CheckPattern(0, 0, 3, 1) || CheckPattern(2, 2, 3, 1)) { ClearPattern(); MechSpecial(n, 2); }
+    else if (CheckPattern(0, 2, 2, 4) || CheckPattern(2, 0, 0, 4)) { ClearPattern(); MechSpecial(n, 3); }
   } else if (ch === 6) {
-    if (CheckPattern1(0, 4, 4, 2) || CheckPattern1(2, 4, 4, 0)) { ClearPattern1(); KathySpecial(0, 0); }
-    else if (CheckPattern1(2, 2, 3, 2, 4) || CheckPattern1(0, 0, 3, 0, 4)) { ClearPattern1(); KathySpecial(0, 1); }
-    else if (CheckPattern1(2, 2, 5, 3, 4) || CheckPattern1(0, 0, 5, 3, 4)) { ClearPattern1(); KathySpecial(0, 2); }
-    else if (CheckPattern1(2, 2, 6, 4) || CheckPattern1(0, 0, 6, 4)) { ClearPattern1(); KathySpecial(0, 3); }
+    if (CheckPattern(0, 4, 4, 2) || CheckPattern(2, 4, 4, 0)) { ClearPattern(); KathySpecial(n, 0); }
+    else if (CheckPattern(2, 2, 3, 2, 4) || CheckPattern(0, 0, 3, 0, 4)) { ClearPattern(); KathySpecial(n, 1); }
+    else if (CheckPattern(2, 2, 5, 3, 4) || CheckPattern(0, 0, 5, 3, 4)) { ClearPattern(); KathySpecial(n, 2); }
+    else if (CheckPattern(2, 2, 6, 4) || CheckPattern(0, 0, 6, 4)) { ClearPattern(); KathySpecial(n, 3); }
   } else if (ch === 7) {
-    if (CheckPattern1(0, 2, 3, 4, 5) || CheckPattern1(2, 0, 3, 4, 5)) { ClearPattern1(); GeorgeSpecial(0, 0); }
-    else if (CheckPattern1(6, 5, 3, 4, 2) || CheckPattern1(6, 5, 3, 4, 0)) { ClearPattern1(); GeorgeSpecial(0, 1); }
-    else if (CheckPattern1(0, 2, 4, 3) || CheckPattern1(2, 0, 4, 3)) { ClearPattern1(); GeorgeSpecial(0, 2); }
-    else if (CheckPattern1(2, 2, 3, 2, 0) || CheckPattern1(0, 0, 3, 0, 2)) { ClearPattern1(); GeorgeSpecial(0, 3); }
+    if (CheckPattern(0, 2, 3, 4, 5) || CheckPattern(2, 0, 3, 4, 5)) { ClearPattern(); GeorgeSpecial(n, 0); }
+    else if (CheckPattern(6, 5, 3, 4, 2) || CheckPattern(6, 5, 3, 4, 0)) { ClearPattern(); GeorgeSpecial(n, 1); }
+    else if (CheckPattern(0, 2, 4, 3) || CheckPattern(2, 0, 4, 3)) { ClearPattern(); GeorgeSpecial(n, 2); }
+    else if (CheckPattern(2, 2, 3, 2, 0) || CheckPattern(0, 0, 3, 0, 2)) { ClearPattern(); GeorgeSpecial(n, 3); }
   } else if (ch === 8) {
-    if (CheckPattern1(0, 0, 2, 5) || CheckPattern1(2, 2, 0, 5)) { ClearPattern1(); PhilSpecial(0, 0); }
-    else if (CheckPattern1(3, 3, 2, 2, 5) || CheckPattern1(3, 3, 0, 0, 5)) { ClearPattern1(); PhilSpecial(0, 1); }
-    else if (CheckPattern1(3, 4, 2, 2) || CheckPattern1(3, 4, 0, 0)) { ClearPattern1(); PhilSpecial(0, 2); }
-    else if (CheckPattern1(3, 2, 2, 0, 3) || CheckPattern1(3, 0, 0, 2, 3)) { ClearPattern1(); PhilSpecial(0, 3); }
+    if (CheckPattern(0, 0, 2, 5) || CheckPattern(2, 2, 0, 5)) { ClearPattern(); PhilSpecial(n, 0); }
+    else if (CheckPattern(3, 3, 2, 2, 5) || CheckPattern(3, 3, 0, 0, 5)) { ClearPattern(); PhilSpecial(n, 1); }
+    else if (CheckPattern(3, 4, 2, 2) || CheckPattern(3, 4, 0, 0)) { ClearPattern(); PhilSpecial(n, 2); }
+    else if (CheckPattern(3, 2, 2, 0, 3) || CheckPattern(3, 0, 0, 2, 3)) { ClearPattern(); PhilSpecial(n, 3); }
   } else if (ch === 9) {
-    if (CheckPattern1(3, 0, 2, 4, 1) || CheckPattern1(3, 2, 0, 4, 1)) { ClearPattern1(); SuperSpecial(0, 0); }
-    else if (CheckPattern1(2, 3, 3, 3, 5) || CheckPattern1(0, 3, 3, 3, 5)) { ClearPattern1(); SuperSpecial(0, 1); }
-    else if (CheckPattern1(0, 0, 0, 4) || CheckPattern1(2, 2, 2, 4)) { ClearPattern1(); SuperSpecial(0, 2); }
-    else if (CheckPattern1(0, 4, 2, 4, 5) || CheckPattern1(2, 4, 0, 4, 5)) { ClearPattern1(); SuperSpecial(0, 3); }
+    if (CheckPattern(3, 0, 2, 4, 1) || CheckPattern(3, 2, 0, 4, 1)) { ClearPattern(); SuperSpecial(n, 0); }
+    else if (CheckPattern(2, 3, 3, 3, 5) || CheckPattern(0, 3, 3, 3, 5)) { ClearPattern(); SuperSpecial(n, 1); }
+    else if (CheckPattern(0, 0, 0, 4) || CheckPattern(2, 2, 2, 4)) { ClearPattern(); SuperSpecial(n, 2); }
+    else if (CheckPattern(0, 4, 2, 4, 5) || CheckPattern(2, 4, 0, 4, 5)) { ClearPattern(); SuperSpecial(n, 3); }
   } else if (ch === 10) {
-    if (CheckPattern1(0, 0, 2, 2, 3) || CheckPattern1(2, 2, 0, 0, 3)) {
-      ClearPattern1();
-      if (a2() !== 5) NewBubble(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
-    } else if (CheckPattern1(5, 0, 2, 3, 1) || CheckPattern1(5, 2, 0, 3, 1)) {
-      ClearPattern1();
-      if (a2() !== 5) { NewBodyParts(r, 0); SetSpriteAction2(0, 0xe); }
-    } else if (CheckPattern1(0, 0, 2, 4) || CheckPattern1(2, 2, 0, 4)) {
-      ClearPattern1();
-      if (a2() !== 5) NewDarkBeam(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
-    } else if (CheckPattern1(0, 3, 6, 2, 4) || CheckPattern1(2, 3, 6, 0, 4)) {
-      ClearPattern1();
-      if (a2() !== 5) NewBats(GetSpriteInfo(0, 1), 0);
+    if (CheckPattern(0, 0, 2, 2, 3) || CheckPattern(2, 2, 0, 0, 3)) {
+      ClearPattern();
+      if (a2() !== 5) NewBubble(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (CheckPattern(5, 0, 2, 3, 1) || CheckPattern(5, 2, 0, 3, 1)) {
+      ClearPattern();
+      if (a2() !== 5) { NewBodyParts(r, n); SetSpriteAction2(n, 0xe); }
+    } else if (CheckPattern(0, 0, 2, 4) || CheckPattern(2, 2, 0, 4)) {
+      ClearPattern();
+      if (a2() !== 5) NewDarkBeam(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (CheckPattern(0, 3, 6, 2, 4) || CheckPattern(2, 3, 6, 0, 4)) {
+      ClearPattern();
+      if (a2() !== 5) NewBats(GetSpriteInfo(n, 1), n);
     }
   } else if (ch === 0xb) {
-    if (CheckPattern1(3, 0, 4, 2) || CheckPattern1(3, 2, 4, 0)) {
-      ClearPattern1();
-      if (a2() !== 5) NewProxMine(r, GetSpriteInfo(0, 1), 0);
-    } else if (CheckPattern1(2, 2, 5, 6) || CheckPattern1(0, 0, 5, 6)) {
-      ClearPattern1();
-      if (a2() !== 5) NewGrenades(r, GetSpriteInfo(0, 1), 0, GetSpriteDirection(0));
-    } else if (CheckPattern1(0, 0, 3, 4, 2) || CheckPattern1(2, 2, 3, 4, 0)) {
-      ClearPattern1();
-      if (a2() !== 5) SetSpriteAction2(0, 0xf);
-    } else if (CheckPattern1(6, 0, 0, 1, 2) || CheckPattern1(6, 2, 2, 1, 0)) {
-      ClearPattern1();
-      if (a2() !== 5) NewTracker(r, GetSpriteInfo(0, 1), 0);
+    if (CheckPattern(3, 0, 4, 2) || CheckPattern(3, 2, 4, 0)) {
+      ClearPattern();
+      if (a2() !== 5) NewProxMine(r, GetSpriteInfo(n, 1), n);
+    } else if (CheckPattern(2, 2, 5, 6) || CheckPattern(0, 0, 5, 6)) {
+      ClearPattern();
+      if (a2() !== 5) NewGrenades(r, GetSpriteInfo(n, 1), n, GetSpriteDirection(n));
+    } else if (CheckPattern(0, 0, 3, 4, 2) || CheckPattern(2, 2, 3, 4, 0)) {
+      ClearPattern();
+      if (a2() !== 5) SetSpriteAction2(n, 0xf);
+    } else if (CheckPattern(6, 0, 0, 1, 2) || CheckPattern(6, 2, 2, 1, 0)) {
+      ClearPattern();
+      if (a2() !== 5) NewTracker(r, GetSpriteInfo(n, 1), n);
     }
   }
 }
+
+const CheckMoves1 = () => CheckMoves(0);
+const CheckMoves2 = () => CheckMoves(1);
 
 // ---- keyboard ---------------------------------------------------------------------------------
 
@@ -395,7 +417,83 @@ async function CheckKeyDown() {
     if (!pressed) rec.last = -1;
     CheckMoves1();
   }
-  // Player 2's keys (two humans) are not part of this build yet.
+  // Player 2 (two humans): the same as player 1 for slot 1 with keys 7–13, except the quirks marked.
+  const b2 = () => GetSpriteAction2(1);
+  const ch2 = GetChosenChar(1);
+  if (GetNumPlayers() === 2 && b2() !== 0x11 && (ch2 !== 4 || b2() !== 0xd) && GetSpriteAction1(1) !== 0x12) {
+    const r1 = GetSpriteRect(1);
+    let pressed = 0;
+    if (CheckKey(GetKey(8))) { // jump
+      const a = b2();
+      if (a !== 3 && a !== 5 && a !== 9 && a !== 0xb && a !== 0xc && (OnSurface(r1, 1) || b2() === 0x13)) {
+        if (b2() === 7) {
+          SetSpriteAction2(1, 9);
+          PlaySound(Rand(7) + 8);
+          SetSpriteInfo(1, 3, 0);
+          SetSpriteInfo(1, 4, 0);
+          SetSpritePath(1, 0, 0);
+        } else if (b2() === 2) {
+          PlaySound(2);
+          SetSpriteAction2(1, 3);
+          SetSpritePath(1, 0, -0x11);
+        } else if (b2() === 0xe && ch2 === 9) {
+          SetSpriteAction2(1, 2);
+        } else if (b2() === 0x13) {
+          SetSpriteAction1(1, 0x15);
+        }
+      }
+      pressed = 1;
+      RecordKey2(1);
+    }
+    if (CheckKey(GetKey(7)) && GetSpriteAction1(1) !== 0x12) { // left
+      if (GetSpriteDirection(1) === 1) SetSpriteAction1(1, 1);
+      else SetSpriteDirection(1, 1);
+      pressed = 1;
+      RecordKey2(0);
+    }
+    if (CheckKey(GetKey(9)) && GetSpriteAction1(1) !== 0x12) { // right (player 2 checks its own slot)
+      if (GetSpriteDirection(1) === 0) SetSpriteAction1(1, 1);
+      else SetSpriteDirection(1, 0);
+      SetSpriteAction1(1, 1);
+      pressed = 1;
+      RecordKey2(2);
+    }
+    if (CheckKey(GetKey(10))) { // punch
+      if (b2() === 2) SetSpriteAction2(1, 4);
+      else if (b2() === 7) SetSpriteAction2(1, 10);
+      else if (b2() === 0xe && ch2 === 9) SetSpriteAction2(1, 2);
+      else if (b2() === 0x13) SetSpriteAction1(1, 0x14);
+      pressed = 1;
+      RecordKey2(3);
+    }
+    // Original quirk: while flying (0x13), player 2's kick, uppercut and spin kick set action 1 to 2
+    // where player 1's set action 2.
+    if (CheckKey(GetKey(11))) { // kick
+      if (b2() === 2) SetSpriteAction2(1, 6);
+      else if (b2() === 3) { SetSpriteAction2(1, 0xb); PlaySound(Rand(7) + 8); }
+      else if (b2() === 0xe && ch2 === 9) SetSpriteAction2(1, 2);
+      else if (b2() === 0x13) SetSpriteAction1(1, 2);
+      pressed = 1;
+      RecordKey2(4);
+    }
+    if (CheckKey(GetKey(12))) { // uppercut
+      if (b2() === 2) SetSpriteAction2(1, 7);
+      else if (b2() === 0xe && ch2 === 9) SetSpriteAction2(1, 2);
+      else if (b2() === 0x13) SetSpriteAction1(1, 2);
+      pressed = 1;
+      RecordKey2(5);
+    }
+    if (CheckKey(GetKey(13))) { // spin kick
+      if (b2() === 2) SetSpriteAction2(1, 8);
+      else if (b2() === 3) { SetSpriteAction2(1, 0xc); PlaySound(Rand(7) + 8); }
+      else if (b2() === 0xe && ch2 === 9) SetSpriteAction2(1, 2);
+      else if (b2() === 0x13) SetSpriteAction1(1, 2);
+      pressed = 1;
+      RecordKey2(6);
+    }
+    if (!pressed) recs[1].last = -1;
+    CheckMoves2();
+  }
 }
 
 // ---- a fighter dies -------------------------------------------------------------------------------

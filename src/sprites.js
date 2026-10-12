@@ -5,8 +5,11 @@
 
 import { bctx, buffer, cicnStrip, copyBits, pictStrip, sctx } from './gfx.js';
 import { copyRect, offsetRect } from './mac.js';
-import { IsCameraSprite, IsCameraSprite2, KillCamera, KillCamera2, RectVisible, WorldToLocal } from './camera.js';
-import { drawOverlays, renderBackground } from './render.js';
+import {
+  GetSplit, IsCameraSprite, IsCameraSprite2, KillCamera, KillCamera2, RectVisible, RectVisible2, WorldToLocal, WorldToLocal2,
+} from './camera.js';
+import { drawOverlays, drawSplitOverlays, renderBackground, renderSplit } from './render.js';
+import { DrawSparks1 } from './sparks.js';
 
 function blank() {
   return {
@@ -156,8 +159,46 @@ export function RenderSprites() {
   BufferToScreen();
 }
 
+// RenderSpritesSplit: the left half from view 1 (sprites, then sparks), then, clipped to the right
+// half, view 2's background and sprites (world sprites moved 320 px right; fixed ones where they are),
+// then the divider and the HUD. Original quirks kept: sparks are drawn only for view 1, and the right
+// half's background covers whatever of them (or of the left half's sprites) crosses x 320. The
+// original also draws lightning bolts here (DrawLightning2), but nothing in the game makes any.
+export function RenderSpritesSplit() {
+  renderSplit(1);
+  for (const s of gSprites) {
+    if (s.inUse && RectVisible(s.rect) && s.doDraw && s.type === 0x434) drawSprite(s);
+  }
+  for (const s of gSprites) {
+    if (s.inUse && RectVisible(s.rect) && s.doDraw && s.type !== 0x434) drawSprite(s);
+  }
+  DrawSparks1();
+  bctx.save();
+  bctx.beginPath();
+  bctx.rect(320, 0, 320, 480);
+  bctx.clip();
+  renderSplit(2);
+  for (const s of gSprites) {
+    if (s.inUse && RectVisible2(s.rect) && s.doDraw && s.type === 0x434) drawSprite2(s);
+  }
+  for (const s of gSprites) {
+    if (s.inUse && RectVisible2(s.rect) && s.doDraw && s.type !== 0x434) drawSprite2(s);
+  }
+  bctx.restore();
+  drawSplitOverlays();
+  BufferToScreen();
+}
+
+function drawSprite2(s) {
+  const src = { left: s.frame * s.frameW, top: 0, right: s.frame * s.frameW + s.frameW, bottom: s.frameH };
+  const dst = copyRect(s.rect);
+  if (s.world) { WorldToLocal2(dst); offsetRect(dst, 320, 0); }
+  copyBits(bctx, s.image, src, dst);
+}
+
 export function DrawSprites() {
-  RenderSprites();
+  if (GetSplit() === 0) RenderSprites();
+  else RenderSpritesSplit();
 }
 
 

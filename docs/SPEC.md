@@ -131,6 +131,12 @@ Colours RGB (0xffff, 0x08c2, 0x06a2) and (0x8000, 0, 0).
   - kick → 6; airborne → flying side kick (0xb), sound Rand(7)+8.
   - uppercut → 7.
   - spin → 8; airborne → 0xc with sound.
+- Player 2 (numPlayers 2: slot 1, keys 7–13) is a copy of player 1 with these differences: right checks
+  slot 1's action1 (player 1's checks slot 10); while flying (0x13) kick, uppercut and spin set action1 = 2
+  (player 1's set action2 = 2).
+- CheckMoves2 = CheckMoves1 for slot 1 except: Ed clears info 7 on Tri Ball instead of Teleport; Speedy's
+  Fire Ball checks only action2 ≠ 5 (player 1's also ≠ 0xd/0xe/0xf); Invisible's Ice Ball checks slot 1
+  (its own; player 1's also checks slot 1); Ninja's Decoy parks above slot 0 (player 1's above slot 1).
 - System: Cmd-Q quit; Esc → selection; P or keycode 0x71 → pause (PICT 9000 at (240,218)-(400,263)),
   pause time added back to the round timer.
 
@@ -364,8 +370,9 @@ info1, num). Then HandlePlayer2; KeepSpriteOnScreen always.
   (RecordSKey, 6-entry list, consecutive repeats dropped, restarts after 6) and, when they are exactly 0,1,2,3,5,6
   (left, jump, right, punch, uppercut, spin) with numChars 11, sets numChars 12 and calls CreateSecretSelector: 4 × MakeSparks
   (rect + 16, d 3/2/0/1, 10, life 20, speed 7, **colour 2**, 2×2) and the preview template (cicn 5000) at frame 11 ("?") in
-  the 12th rect, slot 50, DoNothing. OpenSelection recreates it while numChars == 12. The port leaves the key code out
-  (Colin's choice: unlocked by winning the Tournament, an addition); `?debug` unlocks it for testing. ForeColor(2) on
+  the 12th rect, slot 50, DoNothing. OpenSelection recreates it while numChars == 12. OpenSelection clears the list and its
+  count. The check runs every frame, after the list restarts at 6. The port keeps the code (also a Cheats-page switch,
+  remembered, an addition) and adds winning the Tournament as a way to unlock him; `?debug` unlocks it for testing. ForeColor(2) on
   Color QuickDraw is not recovered, so those sparks are not drawn yet.
 - NewExplosion(rect, opp, num) (cicn 572, 11 frames, delay 2, speed 6): vx = Rand(12) − 6, then vy = Rand(6) − 12 (template);
   PlaySound(17). HandleExplosion: move, vy += 1, anim; frame ≥ 11 → dies; touching opp (2,2,2,2) and info7 == 0:
@@ -454,7 +461,13 @@ Standard "hit" = DoDamage, opp action2 5 unless dead, path += knockback, set dir
   2 humans. 1 player: `HandleSingleCamera` → view = 640×480 centred on player 0's rect centre (integer halves,
   C truncation), then clamped inside the world (OffCamera(0,0)). 2 players: CalcDistance gives the gap between
   the two rects and their midpoint; if gap.x < 641 and gap.y < 481 → single view centred on the midpoint,
-  else split screen (two 320×480 views, HandleDoubleCamera).
+  else split screen (two 320×480 views, HandleDoubleCamera: each centred on its sprite's rect centre, clamped
+  to the world by OffCamera / OffCamera2).
+- RenderSpritesSplit (DrawSprites when split): view 1 → buffer (0,0)-(320,480), sprites by RectVisible (type 0x434
+  first), DrawSparks1; clip to (320,0)-(640,480), view 2 → right half, sprites by RectVisible2 (world ones
+  WorldToLocal2 + 320 px), DrawLightning2 (no bolts are ever made); unclip; red (0xcd) line x 320, y 0–480; then
+  life bars, round stuff, time, radar, tutorial, scores (no hint).
+- PointVisible2 doesn't check the split flag (RectVisible2 does), so view 2's last rect counts for sparks always.
 - `HandleCamera` (smooth follow, speed 32 px/frame, deadzone at view centre) is used only by HandleTitle,
   RunOptions and RunSelection.
 
@@ -667,8 +680,11 @@ Duration: DrawSprocket's fixed fade time (to be measured from the gameplay video
   FlyKicker: vx ±10, frame 56/57. FlyKicker2: vx ±5, spin frames 36–39 / 40–43. Gravity +1; dies when bottom > 480,
   left > 640 or right < 0.
 - Credits hot spot (0,428)-(94,480): click → draw PICT 158 there, PlaySound(16), DoCredits, then rebuild the title.
-- Keys: Esc or Cmd-Q → quit; Return/Enter → selection. Typing F-I-R-E-M-O-N-K-E-Y toggles super blood (registered),
-  with a red spark burst at the mouse and hint strings 16/17.
+- Keys: Esc or Cmd-Q → quit; Return/Enter → selection. Typing F-I-R-E-M-O-N-K-E-Y toggles super blood (registered).
+  A state 0–9 checked every frame from the held keys: F always → 1; each later letter moves on from the one before
+  (or stays if already there) and otherwise resets to 0; E covers 3 → 4 and 8 → 9; Y at 9 toggles. Turning it on:
+  4 × MakeSparks(mouse + 16, d 2/3/0/1, 50, life 32, speed 1/2/4/4, red 0xcd, gravity, 3×3) and hint 15 ("engaged");
+  off: hint 16. Super blood: blood sparks 12, life 36, 3×3 (normal 2, 8, 2×2), and the red-blood cursor drips more.
 - Hint ticker box (StartHint): (115,460)-(445,476), text starts at x 445.
 
 ## Screen transition (KillSpriteControls)
@@ -706,6 +722,11 @@ cursor 199; two-player icon (cicn 2004) in slot 198 at (90,−49).
   (frame 2); Esc → cancel (back to title); Cmd-Q quit; in 1-player mode clicking a portrait (or the 30 px below it)
   picks P1's char. Sounds 18 on change.
 - Play-mode button: click → selected (pressed 5 frames then frame 1), previous unselected, playMode = slot − 3, sound 16.
+- 1P / 2P icons (HandleOnePlayer / HandleTwoPlayers): once dropped in, the selected one shows frame 1; clicking the
+  other plays sound 16 and switches. To 2: NewTwoOnTwoSprite (first free slots: 6 TWO ON TWO PICT at slot 5's rect,
+  HandlePlayModeButton; 8 P2 frame (0,0,36,40); 10 P2 preview at x 640 − P1 preview's right, y 16, with the template's
+  vx set to −(slot 9's vx), a lasting template change), ChooseChar(1, chosen[1]), numPlayers = 2. To 1: numPlayers = 1,
+  kill 8 and 10, slot 6 action 3 (flies up; at top < 112 it goes, and TWO ON TWO falls back to ONE ON ONE).
 - OK → KillSpriteControls → (tournament: ladder screen) else OpenSceneSelector → Fade(0), CreatePlayers…, fight.
   1 player + ONE ON ONE: the CPU opponent's char = Rand(numChars) (SetCharRand(1)). Esc/Cancel → title.
 
