@@ -17,6 +17,7 @@ import {
 } from '../state.js';
 import { NewTitleScreenSprites } from './title.js';
 import { OpenKeyScreen } from './keys.js';
+import { OpenCheatScreen } from './cheats.js';
 
 const opt = { exit: 0, selectedButton: -1, subs: [-1, -1, -1, -1], selectedSub: 0 };
 
@@ -72,6 +73,7 @@ export function NewOptionsScreenSprites() {
   NewSpriteFromPICT(T.diff, r, HandleDiff);
   NewSpriteFromPICT(T.time, r, HandleTime);
   NewSpriteFromPICT(T.keys, r, HandleKey);
+  NewSpriteFromPICT(T.cheats, r, HandleCheats); // Not in the original (see src/screens/cheats.js)
   for (let i = 0; i < 4; i++) opt.subs[i] = -1;
   opt.selectedButton = -1;
   NewCursorSprite();
@@ -216,21 +218,27 @@ const HandleTime = optionButton((r, n) => spawnSubs(r, n, [
   [T.sub30, HandleTime30, GetTimePref() === 0], [T.sub100, HandleTime100, GetTimePref() === 1],
   [T.sub130, HandleTime130, GetTimePref() === 2], [T.subUnlimited, HandleTimeUnlimited, GetTimePref() === 3]]));
 
-async function HandleKey(s) {
-  if (s.rect.top < s.info[5]) {
-    offsetRect(s.rect, 0, s.f42);
-    return;
-  }
-  s.frame = 0;
-  const m = GetMouse();
-  if (ptInRect(m.h, m.v, s.rect)) {
-    s.frame = 1;
-    if (Button()) {
-      PlaySound(0x10);
-      KillSubButtons();
-      s.frame = 2;
-      DrawSprites();
-      await OpenKeyScreen();
+// KEYS (and CHEATS, an addition that works the same way) open their own screen.
+function screenButton(open) {
+  return async (s) => {
+    if (s.rect.top < s.info[5]) {
+      offsetRect(s.rect, 0, s.f42);
+      return;
     }
-  }
+    s.frame = 0;
+    const m = GetMouse();
+    if (ptInRect(m.h, m.v, s.rect)) {
+      s.frame = 1;
+      if (Button()) {
+        PlaySound(0x10);
+        KillSubButtons();
+        s.frame = 2;
+        DrawSprites();
+        await open();
+      }
+    }
+  };
 }
+
+const HandleKey = screenButton(() => OpenKeyScreen());
+const HandleCheats = screenButton(() => OpenCheatScreen());

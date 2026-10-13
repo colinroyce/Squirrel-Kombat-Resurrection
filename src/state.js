@@ -1,12 +1,21 @@
 // Preferences and the selection state shared between screens.
 
 import { SetWantsMusic, SetWantsSound, StopMusic, PlayMusic } from './sound.js';
+import { Rand } from './mac.js';
 
 // Key slots: P1 left, jump, right, punch, kick, uppercut, spin; then the same for P2.
 // Each entry is [character shown on the Keys screen, Mac virtual key code] (DefaultKeys).
-export const DEFAULT_KEYS = [
+const ORIGINAL_KEYS = [
   ['A', 0x00], ['W', 0x0d], ['D', 0x02], ['S', 0x01], ['E', 0x0e], [' ', 0x31], ['Q', 0x0c],
   ['4', 0x56], ['8', 0x5b], ['6', 0x58], ['5', 0x57], ['9', 0x5c], ['0', 0x52], ['7', 0x59],
+];
+
+// Not in the original (Colin's choice): new defaults so two players fit on one laptop keyboard.
+// Player 1's uppercut moves from Space to Left Shift; player 2 moves off the number pad to a mirror
+// of player 1's layout (L ' P ; [ O, uppercut Right Shift).
+export const DEFAULT_KEYS = [
+  ['A', 0x00], ['W', 0x0d], ['D', 0x02], ['S', 0x01], ['E', 0x0e], ['', 0x38], ['Q', 0x0c],
+  ['L', 0x25], ['P', 0x23], ["'", 0x27], [';', 0x29], ['[', 0x21], ['', 0x3c], ['O', 0x1f],
 ];
 
 // DefaultPrefs: sound on, music on, difficulty medium, yellow blood, 60-second rounds.
@@ -20,8 +29,16 @@ export function loadPrefs() {
     const p = JSON.parse(localStorage.getItem(STORE) || 'null');
     if (p) Object.assign(prefs, p);
   } catch (e) { /* no storage: defaults */ }
+  // Saved keys still on an original default move to the new defaults; changed ones are kept.
+  if (!prefs.keysV2) {
+    prefs.keys = prefs.keys.map((k, i) => (k[1] === ORIGINAL_KEYS[i][1] ? DEFAULT_KEYS[i].slice() : k));
+    prefs.keysV2 = 1;
+    savePrefs();
+  }
   SetWantsSound(prefs.sound);
   SetWantsMusic(prefs.music);
+  if (prefs.muskrat || prefs.cheatMuskrat) sel.numChars = 12; // Not in the original: see UnlockMuskrat
+  sel.superBlood = prefs.cheatBlood ? 1 : 0; // Not in the original: cheats are remembered (see SetSuperBlood)
 }
 
 export function savePrefs() {
@@ -68,5 +85,40 @@ export const GetSuperBlood = () => sel.superBlood;
 export const GetScene = () => sel.scene;
 
 // Fighters and scenes built so far; the rest of the game is shown but inactive.
-export const STAGED_CHARS = [0, 1];
+export const STAGED_CHARS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0xb];
 export const STAGED_SCENES = [0, 1, 2, 3, 4];
+
+// ChooseRandomScene: the Tournament's scene for each fight (unregistered builds only Forest/Field).
+export function ChooseRandomScene() {
+  if (GetRegistered() === 0) sel.scene = Rand(2) === 0 ? 1 : 0;
+  else sel.scene = Rand(5);
+}
+
+// Not in the original: Military Muskrat is unlocked by winning the Tournament (Colin's choice), and
+// the browser remembers it. The original's key code also unlocks him, as a cheat (SetMuskratCheat).
+export function UnlockMuskrat() {
+  prefs.muskrat = 1;
+  sel.numChars = 12;
+  savePrefs();
+}
+
+// ---- cheats (the original's two codes, also switched on the Cheats page) ---------------------------
+// Not in the original: the original forgets both when it quits; here they're remembered, like the
+// other options, and the Cheats page in Options (src/screens/cheats.js) switches them.
+
+// Super blood (FIREMONKEY on the title screen): bigger blood bursts.
+export function SetSuperBlood(v) {
+  sel.superBlood = v;
+  prefs.cheatBlood = v;
+  savePrefs();
+}
+
+// Military Muskrat on the character screen (the secret key code). Winning the Tournament unlocks
+// him for good, whatever this is set to.
+export const MuskratWon = () => !!prefs.muskrat;
+export const GetMuskratCheat = () => (prefs.cheatMuskrat ? 1 : 0);
+export function SetMuskratCheat(v) {
+  prefs.cheatMuskrat = v;
+  if (!prefs.muskrat) sel.numChars = v ? 12 : 11;
+  savePrefs();
+}

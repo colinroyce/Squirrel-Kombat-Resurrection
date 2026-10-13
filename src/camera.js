@@ -83,6 +83,15 @@ export function OffCamera(dh, dv) {
   if (view.top < worldRect.top) offsetRect(view, 0, worldRect.top - view.top);
 }
 
+// The same for the second (split-screen) view.
+export function OffCamera2(dh, dv) {
+  offsetRect(view2, dh, dv);
+  if (worldRect.right < view2.right) offsetRect(view2, worldRect.right - view2.right, 0);
+  if (view2.left < worldRect.left) offsetRect(view2, worldRect.left - view2.left, 0);
+  if (worldRect.bottom < view2.bottom) offsetRect(view2, 0, worldRect.bottom - view2.bottom);
+  if (view2.top < worldRect.top) offsetRect(view2, 0, worldRect.top - view2.top);
+}
+
 export function GetVisRect() {
   return copyRect(view);
 }
@@ -99,12 +108,18 @@ export function PointVisible(h, v) {
   return ptInRect(h, v, view) ? 1 : 0;
 }
 
+// Original quirk: unlike RectVisible2, this doesn't check for split screen, so the second view's
+// last rect (at first (0, 0)-(320, 480)) counts as visible even in a one-view game.
 export function PointVisible2(h, v) {
-  return cam.split && ptInRect(h, v, view2) ? 1 : 0;
+  return ptInRect(h, v, view2) ? 1 : 0;
 }
 
 export function WorldToLocal(r) {
   offsetRect(r, -view.left, -view.top);
+}
+
+export function WorldToLocal2(r) {
+  offsetRect(r, -view2.left, -view2.top);
 }
 
 function centre(a, b) {
@@ -161,7 +176,7 @@ function CalcDistance() {
   }
 }
 
-function HandleSingleCamera() {
+export function HandleSingleCamera() {
   if (cam.sprite2 === 0x29a) {
     const r = GetSpriteRect(cam.sprite);
     const h = centre(r.left, r.right), v = centre(r.top, r.bottom);
@@ -181,5 +196,20 @@ export function HandleCameras() {
     }
   }
   if (cam.split === 0) HandleSingleCamera();
-  // split screen (two humans far apart) is not part of this build yet
+  else HandleDoubleCamera();
+}
+
+// Split screen: each view is 320 x 480, centred on its camera sprite's rect, kept inside the world.
+// (The original also averages each centre with itself, which changes nothing.)
+function HandleDoubleCamera() {
+  const a = GetSpriteRect(cam.sprite);
+  const b = GetSpriteRect(cam.sprite2);
+  const ah = centre(a.left, a.right), av = centre(a.top, a.bottom);
+  const bh = centre(b.left, b.right), bv = centre(b.top, b.bottom);
+  setRect(view, ah, av, ah, av);
+  setRect(view2, bh, bv, bh, bv);
+  insetRect(view, -160, -240);
+  insetRect(view2, -160, -240);
+  OffCamera(0, 0);
+  OffCamera2(0, 0);
 }

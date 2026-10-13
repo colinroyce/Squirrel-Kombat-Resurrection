@@ -24,7 +24,11 @@ function fit() {
 }
 
 async function main() {
-  if (location.search.includes('debug')) window.__sk = { hud, gSprites, sel }; // for automated tests
+  if (location.search.includes('debug')) {
+    window.__sk = { hud, gSprites, sel }; // for automated tests
+    // Not in the original: ?debug unlocks Military Muskrat for testing (normally won in the Tournament).
+    sel.numChars = 12;
+  }
   fit();
   window.addEventListener('resize', fit);
   initInput(canvas);

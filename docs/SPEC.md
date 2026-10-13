@@ -123,7 +123,7 @@ Team: P0 (10,10,210,17), P2 (430,10,630,17), P1 (10,38,210,45), P3 (430,38,630,4
 Colours RGB (0xffff, 0x08c2, 0x06a2) and (0x8000, 0, 0).
 
 ## Controls (DefaultKeys; slot order 0 left, 1 jump, 2 right, 3 punch, 4 kick, 5 uppercut, 6 spin)
-- P1: A, W, D, S, E, Space, Q.   P2: keypad 4, 8, 6, 5, 9, 0, 7.
+- P1: A, W, D, S, E, Space, Q.   P2: keypad 4, 8, 6, 5, 9, 0, 7.   (This build's defaults differ, an addition: see README.)
 - CheckKeyDown per player:
   - jump: on ground → action2 3, vy = −17, sound 2; during uppercut (7) → power slam (9), sound Rand(7)+8.
   - left/right: walk, or turn if not facing that way.
@@ -131,6 +131,12 @@ Colours RGB (0xffff, 0x08c2, 0x06a2) and (0x8000, 0, 0).
   - kick → 6; airborne → flying side kick (0xb), sound Rand(7)+8.
   - uppercut → 7.
   - spin → 8; airborne → 0xc with sound.
+- Player 2 (numPlayers 2: slot 1, keys 7–13) is a copy of player 1 with these differences: right checks
+  slot 1's action1 (player 1's checks slot 10); while flying (0x13) kick, uppercut and spin set action1 = 2
+  (player 1's set action2 = 2).
+- CheckMoves2 = CheckMoves1 for slot 1 except: Ed clears info 7 on Tri Ball instead of Teleport; Speedy's
+  Fire Ball checks only action2 ≠ 5 (player 1's also ≠ 0xd/0xe/0xf); Invisible's Ice Ball checks slot 1
+  (its own; player 1's also checks slot 1); Ninja's Decoy parks above slot 0 (player 1's above slot 1).
 - System: Cmd-Q quit; Esc → selection; P or keycode 0x71 → pause (PICT 9000 at (240,218)-(400,263)),
   pause time added back to the round timer.
 
@@ -162,6 +168,228 @@ Same AI/HandlePlayer prologue. info5 counts frames; each ends after info5 > 7 �
   (unless dead), opp path (±10, −2), opp dir faces away, opp frame 0x17/0x16.
 - 0xf scorch: frame 60/61; NewFire(rect, info1, type) each frame then move ±32 px/frame.
 - Then HandlePlayer2; KeepSpriteOnScreen always.
+
+## Ice (HandleIce, character 2)
+Same prologue. Only one own state: 0xf (riding the ice column): info5++; info5 < 8 → move up 32 px; info5 > 7 → vx 0,
+vy −10, action2 3. Then HandlePlayer2; KeepSpriteOnScreen always. No Ice-specific code in HandlePlayer/CheckKeyDown/AI.
+- Keys (CheckMoves1, in order): (2,2,3,5)/(0,0,3,5) Ice Blast; (0,0,2,4)/(2,2,0,4) Ice Fist; (3,4,5) Ice Column (only if
+  OnSurface); (3,6,1) far-edge Ice Blast. Each needs action2 != 5. DoSpecialMove 0–3 = the same four; move 2 also calls
+  ClearPattern1 (player 1's ring, even for the CPU).
+- NewIceBlast(rect, opp, num, dir, group) (cicn 330, 2 frames, 32×32, speed 14) / NewIceBlast2 (cicn 337): Blast2 starts at
+  (1024..1056) if dir 0 else (−32..0), same top/bottom, flying dir = !dir. HandleIceBlast (both): frame = dir; move ±14;
+  spark trail Rand(2) == 0 ? cyan 0x111 : white 0x1e (count 2, life 8, speed 5); hit (blast inset 2,6; opp 2,2): 8 sparks,
+  victim = opp, **but if opp.action1 == 0x12 (already frozen) the victim is info3 = the caster** (original quirk);
+  DoDamage(victim, 10, num); info4 = frame; NewIceCube(victim); dies; info7 = 150, info2 0, action1 0x12, action2 2
+  (frozen 150 frames by HandlePlayer2). Off screen → dies.
+- Ice cube (cicn 332 = 0x14c, runs in HandleSprites' second pass): rect = victim's rect each frame; dies when victim's
+  action1 != 0x12.
+- NewIceFist (cicn 334, speed 32): rect offset ±32 in dir. HandleIceFist: first frame only sets info7 = 1. Then: info5 < 3 →
+  NewIceArm at its rect (cicn 333, DoNothing-like HandleIceArm); info5 > 3 → moves backwards; info5++. info5 > 8 → dies.
+  info5 > 2 → kills its group's arm pieces it touches. Touching opp (2,2,2,2), every frame: path (±20, −5), opp faces
+  back, frame 0x22/0x23 (unless dead/dummy), DoDamage(opp, 15), action2 5 unless dead.
+- NewIceColumn(rect, group, n) (cicn 336, action2 0): info9 = n + 1. Each piece: frame 1 → action2 1; next → if info9 < 7
+  NewIceColumn2 (32 px higher, info9 + 1); then counts info7 to 50 and kills all type 336 of its group. Callers pass the
+  fighter's slot as n, so player 1's column is 7 pieces and slot 1's is 6 (original quirk). Scenery only (not a platform).
+
+## Invisible (HandleInvisible, character 3)
+Same prologue. Own state 0xd (invisibility): f60 = 1; info5--; info5 < 1 → action2 3; doDraw toggles every frame. Started
+with info5 = 11, so after 11 toggles doDraw is 0: he stays undrawn until HandlePlayer2 (hit / frozen) sets doDraw 1 and f60 0.
+The AI skips its turn while he is in 0xd, re-triggers 0xd (info5 11) at random while f60 is set (Rand(1200) > 1185), and
+won't pick special 0 while f60 is set.
+- Keys (in order): (0,1,0,2,3)/(2,1,2,0,3) invisibility; (0,0,2,2,5)/(2,2,0,0,5) boxing glove; (0,0,2,2,3)/(2,2,0,0,3) fire
+  ball; (0,0,2,2,4)/(2,2,0,0,4) ice ball. All need action2 != 5, **except the ice ball, which tests sprite 1's action2**
+  (both in CheckMoves1 and DoSpecialMove; original quirk). DoSpecialMove 0–3 in the same order.
+- NewInvBoxGlove (cicn 399, 2 frames, speed 12) at his rect: HandleInvBoxGlove: frame = dir; move ±12; touching opp (2,2,2,2):
+  DoDamage(opp, 2), action2 5 unless dead, frame 0x17 (both directions), MoveSprite(opp, ±10, 0), info2 0 — every frame,
+  it does not stop; off screen → dies.
+- NewInvFireBall (cicn 401, delay 1, speed 16): Speedy's HandleFireBall. NewInvIceBall (cicn 403, delay 1, speed 14, info3 =
+  his slot): Ice's HandleIceBlast (freezes; same frozen-target quirk).
+
+## Ninja (HandleNinja, character 4)
+Same prologue. CheckKeyDown ignores player 1's keys while Ninja is in 0xd (magnet out).
+- 0xe vanish: **f58 = 3 (stays, original quirk)**; info5 0: frames up; at frame 0x3f/0x43 → rect at (Rand(992), Rand(736)),
+  info5 1; info5 1: frames down; at 0x3c/0x40 → action2 3, vx = vy = 0.
+- 0xf decoy: info7++; < 91 → rect (0,0,0,0); else rect (0,768,0,768), then rect = opponent's rect (read this frame), action2 3,
+  path (0, −18).
+- Specials (CheckMoves1 n = 0, DoSpecialMove n = slot), all need action2 != 5: 0 magnet (only on a surface): action2 0xd,
+  NewMagnet; 1 vanish: action2 0xe, action1 0xe, info5 0, frame 0x3c/0x40; 2 NewNinjaStars; 3 decoy (only on a surface):
+  NewNinjaDecoy(n), action2 0xf, info7 0, rect = **sprite 1's** rect with top 168, bottom 200 (original quirk).
+- Keys (in order): (0,0,0,2,5)/(2,2,2,0,5) magnet; (0,3,4,4,3)/(2,3,4,4,3) vanish; (0,0,0,4,0)/(2,2,2,4,2) stars;
+  (3,3,4,0,0)/(3,3,4,2,2) decoy.
+- NewMagnet (cicn 474, 32×8, speed 16, action1 0; info1 opp, info2 = info3 = num): rect inset (0, 12), ±8. HandleMagnet:
+  action1 0: every other frame NewChain (cicn 473, 32×8, DoNothing, info3 group) at its rect; moves ±16; frame = dir; off
+  screen or touching opp (no insets) → action1 1 (touching → info7 1, info6 = opp). action1 1: speed made negative (comes
+  back); kills its chain links it touches; touching Ninja (insets 8,0 / 8,0) → dies, Ninja action2 2; if caught: opp rect =
+  magnet rect inset (0, −12) moved ±16, opp info4 = frame, info2 0, action1 0x12, action2 2, info7 90 (frozen). Always: Ninja
+  not on a surface → its chain and the magnet die.
+- NewNinjaStars (cicn 476, 4 frames, delay 1, 16×16, speed 8): rect inset 8, ±8; vx = ±8; three stars with vy −3, 0, −1.
+  HandleNinjaStar: anim 0–3, move; touching opp (2,2,2,2): DoDamage 15, action2 5 unless dead, frame 0x17, info2 0, dies;
+  off screen → dies.
+- NewNinjaDecoy(n) (cicn 480, 2 frames): template frame = dir != 0; info3 = n; at Ninja's rect; camera follows it (slot 0:
+  SetCameraUp; slot 1 with 2 players: SetCameraUp2). HandleNinjaDecoy: info0 0: when Ninja is on a surface → camera back to
+  him, info0 30; then counts down and dies.
+
+## Mech (HandleMech, character 5)
+Same prologue. Own state 0xd (firing pose): frame 0x3c/0x3d; info5++; info5 > 15 → action2 2.
+- Every special: if action2 != 5 { if action2 != 3 → action2 0xd, info5 0; spawn } (CheckMoves1 and DoSpecialMove alike).
+- Keys (in order): (0,0,2,2,5)/(2,2,0,0,5) boxing glove; (0,0,0,2,6)/(2,2,2,0,6) power blast; (0,0,3,1)/(2,2,3,1) bombs;
+  (0,2,2,4)/(2,0,0,4) missile. DoSpecialMove 0–3 in that order.
+- NewMechBoxGlove (cicn 566, speed 15): Invisible's HandleInvBoxGlove.
+- NewPowerBlast(rect, opp, num, group) (cicn 568, speed 15, action2 0, info7 1): **callers pass the direction as group (info3)**
+  (original quirk); dir = GetSpriteDirection(num); rect offset ±25. HandlePowerBlast: while right < 1057 and left > −33:
+  action2 0 → hit check, 1; action2 1 → NewPowerBlast2 (next piece ±32, same info1/2/3/dir/info7), hit check, 2; else hit check.
+  Hit (blast no inset, opp 2,2) while info7 != 0: DoDamage(opp, 25), info7 = 0 on every piece of the group, action2 5 unless
+  dead, path (±1, −1), opp faces back, frame 0x17 (dir 0) / 0x16 (dir 1). Out of range → kills every piece of the group.
+- NewMechBombs (cicn 569, 3 frames, speed 14, info7 60): 5 × { vx = dir 0 ? Rand(4) + 3 : −(Rand(4) + 3); vy = Rand(14) − 7 }
+  from Mech's rect (the original also offsets a copy of the rect 6 steps along the path but never uses it). HandleMechBomb:
+  move, vy += 1, anim 0–2; surface / bottom > 768 / top < 0 → vy = trunc(vy × −0.75); right > 1024 or left < 0 → vx = −vx;
+  info7-- < 1 → dies and makes two explosions at its rect. No contact damage.
+- NewMechMissile (cicn 583, 8 frames, 32×16, speed 18): rect top + 8, bottom − 8. HandleMechMissile: move ±18; anim 0–3 (dir 0)
+  / 4–7 (dir 1); off screen → dies; touching opp (2,2,2,2) → explosion at the rect grown 8 px up and down; dies.
+
+## Kathy (HandleKathy, character 6)
+Same prologue. Own state 0xd (scream): frame 0x3c/0x3d; info5 == 0 → PlaySound(11); while |opp.left + 32 − left| < 320 and
+|opp.top + 32 − top| < 280: opp path (±2, −2), frame 0x16 (dir 0) / 0x17 (dir 1) unless dead, action2 5 **even if dead**
+(original quirk); out of range → action2 2. info5++.
+- Specials (all need action2 != 5): 0 scream (only if action2 != 3: action2 0xd, info5 0); 1 NewTriHeart; 2 NewHeartBomb;
+  3 NewFlower. Keys (in order): (0,4,4,2)/(2,4,4,0) scream; (2,2,3,2,4)/(0,0,3,0,4) tri heart; (2,2,5,3,4)/(0,0,5,3,4) heart
+  bomb; (2,2,6,4)/(0,0,6,4) flower (`>>sk`; the archive's Special Moves sheet says `>>s>`, which the game never accepts).
+- NewTriHeart: rect inset 8; centre heart (cicn 657, 16×16, speed 7, HandleTriCenter; dir, info1, info2); then 3 chaser hearts
+  (cicn 658, 4 frames, speed 8, HandleChaserHeart, info3 = centre slot) at the rect moved (Rand1(2), Rand1(2)) (vertical rolled
+  first); centre info4/5/6 = the chasers. HandleTriCenter: moves ±7; touching opp (no insets): 8 sparks (red 0xcd / magenta 0x89),
+  victim = opp, **or the centre's info3 (never set → slot 0) if opp is already frozen** (original quirk); victim info4 = frame,
+  info7 120, action1 0x12, action2 2, info2 0; DoDamage(victim, 3); chasers' info3 = victim; dies. Off screen → dies with its
+  chasers. HandleChaserHeart: homes on info3 like HandleBird (speed 8), anim 0–3; dies when the target is neither frozen nor
+  type 657.
+- NewHeartBomb (cicn 662, info9 80) at her rect: counts down, then dies and NewLilHearts: rect inset 8; 15 × (vy = Rand(6) − 20,
+  then vx = Rand(13) − 6) with cicn 658 (HandleLilHeart: move, vy += 1, anim 0–3; touching opp (2,2,2,2) → dies, DoDamage 10;
+  off screen → dies).
+- NewFlower (cicn 663, 4 frames, speed 16): anim 0–3, moves ±16; touching opp (2,2,2,2): 8 sparks (white / yellow), DoDamage 20,
+  action2 5 unless dead, frame 0x17, info2 0, path (0, −20), dies; off screen → dies.
+
+## George (HandleOldSquirrel, character 7)
+Same prologue.
+- 0xd cane charge: move ±12; anim frames 0x3c–0x3f (dir 0) / 0x40–0x43 (dir 1); touching opp (George 0,4; opp 0,2), every frame:
+  DoDamage(opp, 12), action2 5 unless dead, path (±15, −5), opp faces back, frame 0x22/0x23, info2 0; then move (vx, vy),
+  vy += 1, KeepSpriteOnScreen, on a surface → vx = vy = 0. **Nothing ends it for a human player** (no key does) until he is
+  hit (original quirk); HandleAI flips his dir at the world edges and ends it when Rand(1500) > 1490 (f5a 0, action2 2).
+- 0xe fart pose: frame 0x44/0x45; info5--; < 1 → action2 2.
+- Specials (all need action2 != 5): 0 charge (only if action2 != 3 → 0xd); 1 NewFart, then if action2 != 3: info5 10, action2
+  0xe; 2 NewCane; 3 NewTeeth. Keys (in order): (0,2,3,4,5)/(2,0,3,4,5) charge; (6,5,3,4,2)/(6,5,3,4,0) fart; (0,2,4,3)/
+  (2,0,4,3) cane; (2,2,3,2,0)/(0,0,3,0,2) teeth.
+- NewFart (cicn 737, 8 frames, delay 5, speed 8): rect ±32. HandleFart: anim 0–3 (dir 0) / 4–7 (dir 1); moves ±8; touching opp
+  (fart 2,6; opp 2,2): victim = opp, **or George himself if opp is already frozen** (original quirk); info4 = frame, info2 0,
+  info7 120, action1 0x12, action2 2, DoDamage(victim, 10), NewFrozenFart(victim) (same template, info1 = victim; anim 0–3,
+  follows the victim's rect, dies when they thaw); dies. Off screen → dies.
+- NewCane (cicn 745, 8 frames, speed 10): vx = ±10, vy = −8 − Rand(8), at his rect. HandleCane: move, vy += 1, anim 0–3 / 4–7;
+  touching opp (2,2,2,2) and info7 == 0: DoDamage 25, path (h − Rand(13) − 6, v − 6), dir 1, frame 0x22 + action2 5 (unless
+  dead/dummy), info2 0, info7 1 (keeps flying); off screen → dies.
+- NewTeeth (cicn 753, 4 frames, delay 3, 16×16, speed 9, info4 240): only if he has none out (GetNumSpritesTypeInfo3(753, num));
+  rect inset 8; info1 opp, info2 = info3 = num. HandleTeeth: like the tracker (white 0x1e puff after 240 frames), frames 0–1 /
+  2–3, KeepSpriteOnScreen; hit (2,2,2,2): dies, DoDamage 25, path (h − Rand(13) − 6, v − 6), dir 1, frame 0x22 + action2 5,
+  info2 0.
+
+## Philbert (HandlePhil, character 8)
+Same prologue.
+- 0xe ground pound: info5++; < 10 → frame 0x3c/0x3e; else frame 0x3d/0x3f, DoQuake(1, 60, Rand(11) − 5, Rand(11) − 5) and
+  DoQuake(2, …) (each: vertical Rand rolled first), action2 2, NewRocks(opponent's rect).
+- 0xf stomach punch: info5++; frames 0x46/0x47 (< 10) then 0x48/0x49; info5 == 11 → NewStomach; > 12 → action2 2.
+- 0x10 swallow: info5 0: opp action2 5, action1 0x12, path (0,0); frame 0x40/0x41; info7++; opp moved 9 px toward him (+2 down);
+  info7 > 15 → action2 2 (missed); touching (2,2,2,2) → info5 1, info7 0. info5 1: **f58 = 4 (stays, original quirk)**; opp rect =
+  his rect, opp not drawn; frames 0x42–43 / 0x44–45; info7++; opp action2 2, action1 0x12, info7 1; info7 > 30 → info5 2,
+  info7 0, DoDamage(opp, 30), opp faces away, action2 5, action1 2, path (±16, −10), rect = his rect moved ±16, drawn again.
+  info5 2: frame 0x40/0x41; info7++; > 20 → action2 2.
+- Specials (all need action2 != 5): 0 NewPie; 1 ground pound (only on a surface: action2 0xe, info5 0); 2 stomach (0xf, info5 0);
+  3 swallow (0x10, info5 0, info7 0). Keys (in order): (0,0,2,5)/(2,2,0,5) pie; (3,3,2,2,5)/(3,3,0,0,5) pound; (3,4,2,2)/
+  (3,4,0,0) stomach; (3,2,2,0,3)/(3,0,0,2,3) swallow.
+- NewPie (cicn 831, 8 frames, speed 13): as George's cane (vx ±13, vy −8 − Rand(8), HandleCane).
+- NewRocks(opp rect) (cicn 843, 4 frames, speed 13): rect (opp.left, 0)-(opp.right, 32) moved −96; 5 × { dv = Rand(65), dh = Rand(32);
+  move (dh − 16, dv − 32); vy = Rand(10); spawn; move +48 }. HandleRock: move, vy += 1 (max 16), anim 0–3; touching (2,2,2,2) and
+  info7 == 0: DoDamage 15, path (h − Rand(13) − 6, v − 6), dir 1, frame 0x22 + action2 5, info2 0, info7 1; bottom > 768 → dies.
+- NewStomach (cicn 839, 18×16): rect top + 16; dir 0: right − 14, then +32; dir 1: left + 14, then −32. HandleStomach: frames 0–1 /
+  2–3; info5++, == 3 → dies; touching (no insets) and info7 == 0 (**never set, so it can hit on all 3 frames**): DoDamage 30, path
+  (h ± (Rand(6) + 8), v − 6), opp faces away, frame 0x22 + action2 5, info2 0.
+- Quakes (DoQuake/HandleQuakes, now ported): two sets of 20 per view; DoQuake fills **every** free slot (no break, original
+  quirk); each active quake: Rand1(4) picks (±h, ±v) for OffCamera/OffCamera2, time-- , < 0 → off. Run: after HandleSprites.
+
+## Super Squirrel (HandleSuper, character 9)
+Same prologue.
+- 0x13 flying: frame 0x3e/0x3f; action1 1 → moves 2 × speed sideways; 0x15 → up 10; 0x14 → down 10; 2 → hovers. CheckKeyDown
+  in 0x13: jump → action1 0x15, punch → 0x14, kick/uppercut/spin → action2 2 (lands); jump allowed in the air.
+  HandleAI in 0x13 (instead of the normal AI, skipping its tail): Rand(5000) > 4998 → action2 2, f5a 0; f5a 0 → Rand(4):
+  0 → 1 (toward), 1 → 3 (away), 2 → 0x15 (up), 3 → 0x14 (down); Rand(1000) > 990 → f5a 0; 1/3: action1 1, face toward/away,
+  f5a 0 when overlapping horizontally, touching → f5a 0 and action2 2, world edge → f5a 0; 0x15: action1 0x15, top < 1 → 0;
+  0x14: action1 0x14, **bottom > 1023 → 0 (never true; original quirk)**.
+- 0xe super dash: move (vx, vy); dir = vx < 1; frame 0x3e/0x3f; homes like HandleBird but ±7 clamps; info7++ > 1 → NewSuperGhost
+  (cicn 913, 2 frames, info0 15: frame = dir, dies after 15 frames), info7 0. No damage. Ends by any attack key / jump
+  (CheckKeyDown) — **so holding the move's last key cancels it the next frame** — or, for the CPU, on touching the opponent.
+- 0xf eye beam pose: frame 0x3c/0x3d until no type 911 with info3 = num is left → action2 2.
+- 0x10: NewPhoneBooth(opponent's rect), action2 2.
+- Specials (all need action2 != 5): 0 fly (0x13); 1 dash (0xe, info7 0); 2 eye beam (0xf, info5 0, NewEyeBlast); 3 phone booth
+  (0x10). Keys (in order): (3,0,2,4,1)/(3,2,0,4,1) fly; (2,3,3,3,5)/(0,3,3,3,5) dash; (0,0,0,4)/(2,2,2,4) eye beam;
+  (0,4,2,4,5)/(2,4,0,4,5) phone booth.
+- NewEyeBlast (cicn 911, 32×12, speed 32, action2 0): info1 opp, info2 = info3 = num (its group is the slot here), dir =
+  GetSpriteDirection(num), info7 1; rect ±32 with bottom = top + 12. HandleEyeBlast: as Mech's Power Blast, but damage 25 on
+  a first-piece hit (blast 0,0 / opp 2,2), 30 on the second piece (no insets at all) and 30 on later pieces (0,0 / 2,2).
+- NewPhoneBooth (cicn 912, 40×64 drawn into (opp.left, 0)-(opp.right, 64)): vy = Rand(10). HandlePhoneBooth: move, vy += 1 (max 32);
+  touching (2,2,2,2) and info7 == 0: DoDamage 15, path (h − Rand(13) − 6, v − 6), dir 1, frame 0x22 + action2 5, info2 0, info7 1;
+  bottom > 768 → dies.
+
+## Corpse (HandleCorpse, character 10)
+Same prologue. Own state 0xe (body parts) each frame: info7 = 10, action1 0x12, rect top 900 / bottom 932, vx = vy = 0 (the
+flying head then parks him at y 1000 under itself; he is untouchable until he rises again).
+- Keys (in order): (0,0,2,2,3)/(2,2,0,0,3) bubble; (5,0,2,3,1)/(5,2,0,3,1) body parts (+ action2 0xe); (0,0,2,4)/(2,2,0,4) dark
+  beam; (0,3,6,2,4)/(2,3,6,0,4) bats. All need action2 != 5. DoSpecialMove 0–3 in that order.
+- NewBubble (cicn 975, 6 frames, delay 3, speed 11, action1 0). HandleBubble: 0 → flies ±11; touching opp (bubble 5,5; opp 2,2):
+  DoDamage(opp, 15), action2 5 **even if that killed them** (original quirk), sticks (info4/5 offsets, info6 = opp), → 1.
+  1 → frames up, > 4 → 2. 2 → frame 5, homes on Corpse (info2) like HandleBird but ±8 clamps; touching him → DoDamage(Corpse,
+  −15) (heals 15), sticks to him → 3. 3 → frames down, < 1 → 4. 4 → rises 25 px/frame until off screen.
+- NewBodyParts(rect, num): head (cicn 981, 22×22, rect inset 5, vx 0, vy −25, info1 = num, HandleHead); rect inset 6 more →
+  2 × cicn 985 and 2 × cicn 989 (10×10), each vx = Rand(11) − 5, vy = −12 − Rand(12) (HandleBodyPart). Parts and head: move,
+  vy += 1, anim 0–3, blood trail (red 0xcd if blood pref 0, yellow 0x45 if 2, none if off: MakeSparks(left + 16, top, 3, 2,
+  6, 3, colour, gravity 1)). Parts die off screen. Head: top > 1500 → NewFake(num), dies; every frame Corpse's rect =
+  (head.left, 1000)-(head.right, 1032).
+- NewFake(num) (cicn 1006, 2 frames): x = Rand(992), rect (x, 768)-(x + 32, 800). HandleFake: dir = Corpse's dir, frame = dir,
+  rises 1 px/frame (Corpse kept at y 1000 under it); bottom < 769 → Corpse's rect = its rect, action2 2, action1 2; dies.
+- NewDarkBeam (cicn 993, speed 32, action2 0, info7 1): as Mech's Power Blast (same direction-as-group quirk), but a hit
+  (beam 0,0; opp 2,2, while info7 != 0) freezes instead of hurting: info4 = frame, NewIceCube, info7 = 200, action1 0x12,
+  action2 2; disarms the whole beam.
+- NewBats(opp, num) (cicn 994, 12 frames, speed 9, info4 180): x = Rand(992), y = Rand(736); 4 spark bursts there in **colour 6**
+  (not recovered, not drawn yet); 3 bats from (x, y)-(x + 32, y + 32), each offset by (Rand(17) − 8, Rand(17) − 8) cumulatively
+  (vertical rolled first), vx = Rand(11) − 5, vy = Rand(11) − 5. HandleBat: info4-- → 0: 4 black (0x21) bursts, dies (finishes
+  the frame); homes like HandleBird (speed 9), frames 0–5 / 6–11, KeepSpriteOnScreen; touching opp (bat 5,5; opp 2,2): dies,
+  DoDamage(opp, 7), path (h − Rand(7) − 3, v − 3), dir 1, frame 0x22 + action2 5 (unless dead/dummy), info2 0.
+
+## Military Muskrat (HandleMuskrat, character 11)
+Same prologue. Own state 0xf (air strike, one frame): action2 = 2; fewer than 6 air bombs (type 1073) → NewAirBombs(opp rect,
+info1, num). Then HandlePlayer2; KeepSpriteOnScreen always.
+- Keys (CheckMoves1, in order): (3,0,4,2)/(3,2,4,0) mine; (2,2,5,6)/(0,0,5,6) grenades; (0,0,3,4,2)/(2,2,3,4,0) air strike
+  (action2 0xf); (6,0,0,1,2)/(6,2,2,1,0) tracker. Each needs action2 != 5. DoSpecialMove 0–3 = mine, grenades, air
+  strike, tracker (all skipped while action2 == 5).
+- Unlock: in the original, a registered build on the character screen records left/jump/right/punch/uppercut/spin presses
+  (RecordSKey, 6-entry list, consecutive repeats dropped, restarts after 6) and, when they are exactly 0,1,2,3,5,6
+  (left, jump, right, punch, uppercut, spin) with numChars 11, sets numChars 12 and calls CreateSecretSelector: 4 × MakeSparks
+  (rect + 16, d 3/2/0/1, 10, life 20, speed 7, **colour 2**, 2×2) and the preview template (cicn 5000) at frame 11 ("?") in
+  the 12th rect, slot 50, DoNothing. OpenSelection recreates it while numChars == 12. OpenSelection clears the list and its
+  count. The check runs every frame, after the list restarts at 6. The port keeps the code (also a Cheats-page switch,
+  remembered, an addition) and adds winning the Tournament as a way to unlock him; `?debug` unlocks it for testing. ForeColor(2) on
+  Color QuickDraw is not recovered, so those sparks are not drawn yet.
+- NewExplosion(rect, opp, num) (cicn 572, 11 frames, delay 2, speed 6): vx = Rand(12) − 6, then vy = Rand(6) − 12 (template);
+  PlaySound(17). HandleExplosion: move, vy += 1, anim; frame ≥ 11 → dies; touching opp (2,2,2,2) and info7 == 0:
+  DoDamage(opp, 15, num), path (h + Rand(15) − 7, v − 12), opp dir 1, frame 0x22 + action2 5 (unless dead/dummy), info2 0,
+  info7 = 1. Shared with Mech.
+- NewProxMine (cicn 1068, 10×8): only if fewer than 3; rect inset (11, 12). HandleProxMine: enlarged by 50 px for GetOpp;
+  falls (vy += 1, no cap), vy = 0 on a surface or bottom > 768; KeepSpriteOnScreen; opponent within 50 px (enlarged rect,
+  no insets) → NewExplosion at the 32×32 rect, dies.
+- NewGrenades (cicn 1069, 4 frames, 13×13, speed 9): only if fewer than 5 (checked once, so up to 8); rect inset 10, then
+  left − 1, top − 1; 4 × { vx = dir 0 ? Rand(4) + 9 : −Rand(4) − 9; vy = −5 − Rand(7) }. HandleGrenade: move, vy += 1, anim
+  0–3; on a surface / bottom > 768 / top < 0 → vy = trunc(vy × −0.75); right > 1024 or left < 0 → dies; KeepSpriteOnScreen;
+  touching opp (no insets) → explosion at rect inset −10 with left + 1, top + 1; dies.
+- NewAirBombs (cicn 1073, speed 16): rect (opp.left, 0)-(opp.right, 32) moved −96 px; 5 bombs, each next one +48 px across
+  and 8 px higher. HandleAirBomb: move, vy += 1 (max 20); touching opp (2,2,2,2) → explosion, dies; bottom > 768 → dies.
+- NewTracker (cicn 1074, 2 frames, 26×22, speed 8, info4 200): only if fewer than 2; rect inset (3, 5). HandleTracker:
+  info4--; at 0 → 4 cyan spark bursts and dies (still finishes the frame); move; dir = vx < 1; frame = dir; homes like
+  HandleBird (vx ±8, vy clamps); off screen → dies; touching opp (2,2,2,2) → dies, explosion at rect inset (−3, −5).
 
 ## Projectiles
 Hit test is DetectCollision(a, b, insets…) — rects shrunk by the given insets before intersecting.
@@ -233,7 +461,13 @@ Standard "hit" = DoDamage, opp action2 5 unless dead, path += knockback, set dir
   2 humans. 1 player: `HandleSingleCamera` → view = 640×480 centred on player 0's rect centre (integer halves,
   C truncation), then clamped inside the world (OffCamera(0,0)). 2 players: CalcDistance gives the gap between
   the two rects and their midpoint; if gap.x < 641 and gap.y < 481 → single view centred on the midpoint,
-  else split screen (two 320×480 views, HandleDoubleCamera).
+  else split screen (two 320×480 views, HandleDoubleCamera: each centred on its sprite's rect centre, clamped
+  to the world by OffCamera / OffCamera2).
+- RenderSpritesSplit (DrawSprites when split): view 1 → buffer (0,0)-(320,480), sprites by RectVisible (type 0x434
+  first), DrawSparks1; clip to (320,0)-(640,480), view 2 → right half, sprites by RectVisible2 (world ones
+  WorldToLocal2 + 320 px), DrawLightning2 (no bolts are ever made); unclip; red (0xcd) line x 320, y 0–480; then
+  life bars, round stuff, time, radar, tutorial, scores (no hint).
+- PointVisible2 doesn't check the split flag (RectVisible2 does), so view 2's last rect counts for sparks always.
 - `HandleCamera` (smooth follow, speed 32 px/frame, deadzone at view centre) is used only by HandleTitle,
   RunOptions and RunSelection.
 
@@ -446,8 +680,11 @@ Duration: DrawSprocket's fixed fade time (to be measured from the gameplay video
   FlyKicker: vx ±10, frame 56/57. FlyKicker2: vx ±5, spin frames 36–39 / 40–43. Gravity +1; dies when bottom > 480,
   left > 640 or right < 0.
 - Credits hot spot (0,428)-(94,480): click → draw PICT 158 there, PlaySound(16), DoCredits, then rebuild the title.
-- Keys: Esc or Cmd-Q → quit; Return/Enter → selection. Typing F-I-R-E-M-O-N-K-E-Y toggles super blood (registered),
-  with a red spark burst at the mouse and hint strings 16/17.
+- Keys: Esc or Cmd-Q → quit; Return/Enter → selection. Typing F-I-R-E-M-O-N-K-E-Y toggles super blood (registered).
+  A state 0–9 checked every frame from the held keys: F always → 1; each later letter moves on from the one before
+  (or stays if already there) and otherwise resets to 0; E covers 3 → 4 and 8 → 9; Y at 9 toggles. Turning it on:
+  4 × MakeSparks(mouse + 16, d 2/3/0/1, 50, life 32, speed 1/2/4/4, red 0xcd, gravity, 3×3) and hint 15 ("engaged");
+  off: hint 16. Super blood: blood sparks 12, life 36, 3×3 (normal 2, 8, 2×2), and the red-blood cursor drips more.
 - Hint ticker box (StartHint): (115,460)-(445,476), text starts at x 445.
 
 ## Screen transition (KillSpriteControls)
@@ -485,6 +722,11 @@ cursor 199; two-player icon (cicn 2004) in slot 198 at (90,−49).
   (frame 2); Esc → cancel (back to title); Cmd-Q quit; in 1-player mode clicking a portrait (or the 30 px below it)
   picks P1's char. Sounds 18 on change.
 - Play-mode button: click → selected (pressed 5 frames then frame 1), previous unselected, playMode = slot − 3, sound 16.
+- 1P / 2P icons (HandleOnePlayer / HandleTwoPlayers): once dropped in, the selected one shows frame 1; clicking the
+  other plays sound 16 and switches. To 2: NewTwoOnTwoSprite (first free slots: 6 TWO ON TWO PICT at slot 5's rect,
+  HandlePlayModeButton; 8 P2 frame (0,0,36,40); 10 P2 preview at x 640 − P1 preview's right, y 16, with the template's
+  vx set to −(slot 9's vx), a lasting template change), ChooseChar(1, chosen[1]), numPlayers = 2. To 1: numPlayers = 1,
+  kill 8 and 10, slot 6 action 3 (flies up; at top < 112 it goes, and TWO ON TWO falls back to ONE ON ONE).
 - OK → KillSpriteControls → (tournament: ladder screen) else OpenSceneSelector → Fade(0), CreatePlayers…, fight.
   1 player + ONE ON ONE: the CPU opponent's char = Rand(numChars) (SetCharRand(1)). Esc/Cancel → title.
 
@@ -493,3 +735,59 @@ Fade(2) (red); background PICT 11000; current scene thumbnail (PICT 10001 Forest
 10008 City) drawn into the background at (192,144)-(448,336); cursor; FadeBack(2). Loop at 30 fps:
 click thumbnail → start; click (460,362)-(494,396) → next scene; click (146,362)-(180,396) → previous (wrapping 0..4),
 sound 16 each; Space/Return/Enter → start. Then the fight starts with Fade(0).
+
+## Tournament (playMode 2)
+- OpenSelection with TOURNAMENT: Fade(0), InitTournament, OpenTournamentScreen, ChooseRandomScene (registered: Rand(5)), then the
+  usual fight setup (no CPU pick: the ladder sets chosen[1]).
+- InitTournament: place 0; opp[0..11] = −1; for i 0..10: v = Rand(11) until not already used → opp[i] (fighters 0–10, so your own
+  fighter is one of them: a mirror match; Military Muskrat never). numOpp 11. Ladder rects from (368, 704)-(400, 736), 48 px up
+  per place; your icon's rects = ladder rects moved (−48, +48).
+- **Original bug:** opp[11] stays −1, CheckPlace is place ≥ 12, so after the 11th win the 12th fight is started with character −1,
+  which CreatePlayers skips (no opponent sprite): the fight can't be won, and the win screen is unreachable. The port puts
+  Military Muskrat in place 11 as the final opponent (addition, Colin's choice).
+- OpenTournamentScreen: SetRenderOptions(1, 0); PICT 5000 (1024×768); icons: yours (cicn 5000 + fighter, at p1[place]), then the 12
+  places (dead cicn 1151 + fighter below your place, else cicn 6000 + fighter), DoNothing; camera on your icon; KillCamera2,
+  DontDrawLifeBars, InitRoundData, ClearOpponentScores (CPU score reset), FadeBack(0); your icon rises 4 px a frame for 12 frames;
+  WaitInputOrTime(90 ticks, or a key/click); chosen[1] = opp[place].
+- HandleDeadPlayer, match over in playMode 2: unregistered and place > 4 → high score, selection. A human lost → AskHighScore,
+  selection. Otherwise IncreasePlace; place < 12 → next opponent: Fade(0), OpenTournamentScreen, Fade(0), SetDrawTime(0),
+  IncreaseRoundNum, ChooseRandScene, InitScene, KillAllSprites, CreatePlayers, NewSceneSprites, cameras, InitLife, InitRoundData,
+  DoRoundAnimation, Run. place 12 → Fade(1) (white), DoWinScreen, AskHighScore, selection.
+- DoWinScreen: PICT 10000 (640×480), FadeBack(1), ScrollText(STR# 128, 13 lines, rect (240, 0)-(640, 480), size 10, font 1
+  (Geneva), step 1, leading 8): lines start below the bottom, 18 px apart at x + 4, scroll up 1 px every 3 ticks; colour by line y:
+  greys 0x84ec, 0x8000, 0xab54, 0xd400, 0xdd6b, 0xeaff, 0xf2d7, white in 10 px bands from each edge (top: < 11 … < 81; bottom: ≥ 470
+  … ≥ 400); ends when the first line is above top − 3 − 12 × 18, or on a mouse click. Also used by the credits (STR# 129, 103 lines,
+  step 2). DoCredits: Fade(2), QuitHint, KillAllSprites, PICT 128 background, FadeBack(2), then
+  ScrollText(129, 103, (20,0)-(260,480), 10, 30, 1, 2, 8). Geneva 10 is drawn with the Geneva 9 stand-in in this build.
+
+## High scores
+- Two tables (1 player / 2 players), 10 rows of {score, name (≤ 31 chars)}; DefaultPrefs: score 0, name "-". A score qualifies if it
+  is higher than some row (CheckNormScore); SubmitHighNorm inserts it there, shifting the rest down, and marks it current (bold).
+- DrawHighScores (Geneva 9, into the background): column width W = StringWidth("12345678912345678912345678955555"); headings
+  "Name" (128 + 3, 60) and "Score" (W + 135, 60) in white; rows at top 64 + 13i, 11 px high: name cell (128..W + 132) filled
+  RGB (ffff, 08c2, 06a2), score cell (W + 132..2W + 132) RGB (8000, 0, 0), text black at +3, baseline top + 9; rank "i." in white
+  right-aligned to x 126. Two-player table: same, starting 192 + 51.
+- DoHighScores (title SCORES, via HandleScoresProj): Fade(2), PICT 159, tables, cursor, OK button (PICT 129 strip at (508, 479),
+  rising 8 px a frame until top < 417; click → sound 16, frame 2), FadeBack(2); OK, Esc, Return or Enter leaves; then the title
+  is rebuilt (Fade(0), sprites, PICT 7000, hint, FadeBack(0)).
+- AskHighScore(n): if GetScore(n) qualifies: Fade(0), PICT 159, tables, FadeBack(0), OpenScoreDialog, submit, tables and OK as above.
+- OpenScoreDialog: DLOG/DITL 999 (240×240, title "Player 1"/"Player 2"): item 1 button "Yeah Baby!" (81, 208)-(159, 228) with a 3 px
+  rounded default ring (inset −4, radius 15); item 2 PICT 9910 (0, 0)-(240, 128); item 3 name field (5, 171)-(235, 187), its text one
+  of 42 joke names picked with Rand(42), fully selected; item 4 PICT 9911 "NAME:" (90, 135)-(150, 155). Return or Enter = OK. The
+  window frame, field and button are Mac OS's own; the port draws them plainly (addition).
+
+## Practice (playMode 1)
+- CreatePlayers: player 2 is the dummy (cicn 500, 4 frames, speed 4, HandleDummy) at P1's spot (582, 736), info1 0, frame 5,
+  dir 1; it runs in HandleSprites' second pass. DoDamage changes no life. No round time: DoRoundAnimation ends with
+  StartTutorial instead of InitTime. MyRun calls HandleTutorial every frame.
+- HandleDummy: FullLife (200) every frame; frame = info5. Frozen (action1 0x12): frame info4, move, vy += 1, walls → vx × −0.75,
+  KeepSpriteOnScreen, on a surface → vy × −0.5, info2 1, |vy| < 2 → stop; info7-- < 1 → action1 2, action2 3. Otherwise: info2 1,
+  move, vy += 1, walls × −0.75, KeepSpriteOnScreen; in the air → tumbling frames 0–3; on a surface → vy × −0.5, |vy| < 2 → info2 0,
+  stop, frame 0; info2 != 0 → yellow sparks (dir, 2, life 6, speed 3, 0x45, gravity) at left or left + 32, top + 16. info5 = frame.
+- StartTutorial: box (115, 133)-(525, 149), text "Welcome to the Squirrel Kombat Tutorial!", start = TickCount. DrawTutorial: box
+  red-outlined black, text red Geneva 10 at (left + 5, top + 11).
+- HandleTutorial: e = ticks since start; e ≥ 9961 → start again (text kept). Otherwise the text changes every 480 ticks (8 s) from
+  e > 480: life bars, nobody gets hurt, round number, no round time, radar, radar colours, win acorns, points, walking, jump,
+  punch, kick, uppercut, spin kick, flying side kick, jump spin kick, power slam, throw, "read the 'Special Moves' file",
+  "Have fun!". Key names come from the current controls (CharToString); two players get "'A' or 'B'" and their own wording
+  (the two-player walk line swaps "left" and "right": original quirk).

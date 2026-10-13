@@ -1,20 +1,23 @@
 // Title screen: DoTitle, TitleLoop, HandleTitle and the title sprites.
 
 import { Rand, Rand1, TickCount, offsetRect, ptInRect, setRect, untilTick } from '../mac.js';
-import { fillBackWithPict } from '../gfx.js';
+import { drawPicture, fillBackWithPict, sctx } from '../gfx.js';
 import { Button, CheckKey, GetMouse } from '../input.js';
 import { DontHandleCamera, GetSplit, HandleCamera, HandleCameraSplit, OffCamera, SetRenderOptions } from '../camera.js';
 import { DrawSprites, GetNumSprites, HandleSprites, KillAllSprites, KillSprite, NewSpriteFromCICN } from '../sprites.js';
-import { HandleSparks } from '../sparks.js';
+import { HandleSparks, MakeSparks } from '../sparks.js';
 import { PlayMusic, PlaySound } from '../sound.js';
-import { DontDrawLifeBars, QuitHint, StartHint } from '../hud.js';
-import { GetFadeNormal } from '../fade.js';
+import { DontDrawLifeBars, QuitHint, StartHint, SuperBloodHint } from '../hud.js';
+import { Fade, FadeBack, GetFadeNormal } from '../fade.js';
 import { CHARS, T } from '../templates.js';
 import { NewCursorSprite, OnScreen, nextFrame } from '../common.js';
 import { OpenOptions } from './options.js';
 import { OpenSelection } from './select.js';
+import { DoHighScores } from './scores.js';
+import { ScrollText } from './tournament.js';
+import { GetSuperBlood, SetSuperBlood } from '../state.js';
 
-const title = { message: 0 };
+const title = { message: 0, code: 0 };
 
 export function SetGameMessage(m) {
   title.message = m;
@@ -51,7 +54,7 @@ async function TitleLoop() {
 
 async function HandleTitle() {
   const start = TickCount();
-  CustomLoop();
+  await CustomLoop();
   CheckTitleKeyDown();
   if (GetSplit() === 0) HandleCamera(); else HandleCameraSplit();
   await HandleSprites();
@@ -60,18 +63,83 @@ async function HandleTitle() {
   await nextFrame(start);
 }
 
-function CustomLoop() {
+async function CustomLoop() {
+  const credits = setRect({}, 0, 0x1ac, 0x5e, 0x1e0);
   // The added RESURREKTION letters are left out of the count, so kickers spawn as in the original.
   if (Rand(9000) > 8900 || GetNumSprites() - T.subtitle.length < 23) {
     if (Rand(2) === 0) NewFlyKicker(2); else NewFlyKicker(1);
   }
-  // The credits hot spot (0,428)-(94,480) is not part of this build yet.
+  // Clicking the CREDITS corner of the title picture shows it pressed (PICT 158), runs the
+  // credits, then rebuilds the title screen.
+  if (Button()) {
+    const m = GetMouse();
+    if (ptInRect(m.h, m.v, credits)) {
+      drawPicture(sctx, 158, credits);
+      PlaySound(0x10);
+      await DoCredits();
+      await Fade(0);
+      KillAllSprites();
+      fillBackWithPict(7000, 640, 480);
+      NewTitleScreenSprites();
+      StartHint();
+      DrawSprites();
+      await FadeBack(0);
+    }
+  }
+}
+
+// The credits: STR# 129 (103 lines) scrolling up over PICT 128, 2 px every 3 ticks, until they
+// have all gone by or the mouse is pressed. Quirk kept: a click still held from the CREDITS
+// corner when the fade ends stops them straight away.
+async function DoCredits() {
+  await Fade(2);
+  QuitHint();
+  KillAllSprites();
+  fillBackWithPict(128, 640, 480);
+  DrawSprites();
+  await FadeBack(2);
+  await ScrollText(0x81, 0x67, setRect({}, 0x14, 0, 0x104, 0x1e0), 10, 0x1e, 1, 2, 8);
 }
 
 function CheckTitleKeyDown() {
   // Esc / Cmd-Q quit the original application; there is nothing to quit to in a browser.
   if (CheckKey(0x24) || CheckKey(0x4c)) title.message = 2;
-  // The FIREMONKEY super-blood code is not part of this build yet.
+  // F-I-R-E-M-O-N-K-E-Y toggles super blood. Each letter held moves the code on from the letter
+  // before it (or keeps it there); a letter out of place starts it over. Other keys don't count.
+  const step = (key, from, to) => {
+    if (!CheckKey(key)) return;
+    title.code = title.code === from ? to : title.code === to ? to : 0;
+  };
+  if (CheckKey(0x03)) title.code = 1; // F
+  step(0x22, 1, 2); // I
+  step(0x0f, 2, 3); // R
+  if (CheckKey(0x0e)) { // E (the 4th and the 9th letter)
+    if (title.code === 3) title.code = 4;
+    else if (title.code === 8) title.code = 9;
+    else if (title.code !== 4 && title.code !== 9) title.code = 0;
+  }
+  step(0x2e, 4, 5); // M
+  step(0x1f, 5, 6); // O
+  step(0x2d, 6, 7); // N
+  step(0x28, 7, 8); // K
+  if (CheckKey(0x10)) { // Y
+    if (title.code === 9) {
+      if (GetSuperBlood() === 0) {
+        SetSuperBlood(1);
+        const m = GetMouse();
+        const h = m.h + 0x10, v = m.v + 0x10;
+        MakeSparks(h, v, 2, 0x32, 0x20, 1, 0xcd, 1, 3, 3);
+        MakeSparks(h, v, 3, 0x32, 0x20, 2, 0xcd, 1, 3, 3);
+        MakeSparks(h, v, 0, 0x32, 0x20, 4, 0xcd, 1, 3, 3);
+        MakeSparks(h, v, 1, 0x32, 0x20, 4, 0xcd, 1, 3, 3);
+        SuperBloodHint(true);
+      } else {
+        SetSuperBlood(0);
+        SuperBloodHint(false);
+      }
+    }
+    title.code = 0;
+  }
 }
 
 export function NewTitleScreenSprites() {
@@ -81,7 +149,8 @@ export function NewTitleScreenSprites() {
   NewSpriteFromCICN(T.start, setRect({}, 48, 480, 112, 480 + h), HandleStart);
   NewSpriteFromCICN(T.options, setRect({}, 208, 480, 272, 480 + h), HandleOptions);
   NewSpriteFromCICN(T.scores, setRect({}, 368, 480, 432, 480 + h), HandleScores);
-  NewSpriteFromCICN(T.quit, setRect({}, 528, 480, 592, 480 + h), HandleQuit);
+  // Not in the original: the QUIT button (528, 480) is left out, since a web page has no
+  // application to quit (Colin's choice).
   NewCursorSprite();
   for (let i = 0; i < 15; i++) {
     NewSpriteFromCICN(T.letters[i], setRect({}, 304, 150, 336, 182), HandleLetter);
@@ -130,9 +199,7 @@ function moveProj(s) {
 
 function HandleStart(s) { titleButton(s, (r) => newProj(r, HandleStartProj)); }
 function HandleOptions(s) { titleButton(s, (r) => newProj(r, HandleOptionsProj)); }
-// High scores and Quit are not part of this build yet: the buttons highlight but ignore clicks.
-function HandleScores(s) { titleButton(s, null); }
-function HandleQuit(s) { titleButton(s, null); }
+function HandleScores(s) { titleButton(s, (r) => newProj(r, HandleScoresProj)); }
 
 function HandleStartProj(s) {
   if (!moveProj(s)) {
@@ -146,6 +213,21 @@ async function HandleOptionsProj(s) {
     KillSprite(s);
     QuitHint();
     await OpenOptions();
+  }
+}
+
+// The high score screen, then back to the title.
+async function HandleScoresProj(s) {
+  if (!moveProj(s)) {
+    KillSprite(s);
+    QuitHint();
+    await DoHighScores();
+    await Fade(0);
+    NewTitleScreenSprites();
+    fillBackWithPict(7000, 640, 480);
+    StartHint();
+    DrawSprites();
+    await FadeBack(0);
   }
 }
 

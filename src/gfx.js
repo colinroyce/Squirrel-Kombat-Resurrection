@@ -65,6 +65,10 @@ const OLD_COLORS = {
   0x199: [0x0000, 0x0000, 0xd400], // blueColor
 };
 
+// Whether `c` is one of the eight constants above. The original also passes other values (the
+// secret selector's sparks use 2); what Color QuickDraw shows for those is not recovered yet.
+export const isOldColor = (c) => c in OLD_COLORS;
+
 export function foreColor(c) {
   const v = OLD_COLORS[c];
   return mapRGB16(v[0], v[1], v[2]);
@@ -179,8 +183,11 @@ export function copyBits(ctx, src, sr, dr) {
 
 // ---- text (Geneva bitmap strikes, drawn srcOr in the foreground colour) ----------------------
 
+// Not in the original: Geneva 10 has no free source yet, so 10 pt text (round timer, hint
+// ticker, practice tutorial, win screen and credits) is drawn with the Geneva 9 glyphs instead
+// (Colin's choice) until a real 10 pt font is found.
 function fontFor(size) {
-  return assets.fonts[size] || null;
+  return assets.fonts[size] || (size === 10 ? assets.fonts[9] : null) || null;
 }
 
 // Width of a string. If a size is missing, the 9 pt metrics stand in so text layout logic
