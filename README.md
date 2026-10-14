@@ -71,8 +71,9 @@ first. The CPU picks its fighter at random.
 ## Controls
 
 These are the defaults. You can change them in Options → Keys, and they're saved in the browser.
-They're an addition: the original's uppercut was Space and player 2 used the number pad, so the new
-layout lets two players share a laptop keyboard (player 2's keys mirror player 1's).
+Player 1's are the original's. Player 2's are an addition: the original put player 2 on the number
+pad, so the new layout mirrors player 1's to let two players share a laptop keyboard. In two-player
+games player 1's uppercut becomes Left Shift (while it's still set to Space), to match player 2's.
 
 | Action | Player 1 | Player 2 |
 |---|---|---|
@@ -80,7 +81,7 @@ layout lets two players share a laptop keyboard (player 2's keys mirror player 1
 | Jump | W | P |
 | Punch | S | ; |
 | Kick | E | [ |
-| Uppercut | Left Shift | Right Shift |
+| Uppercut | Space (Left Shift with 2 players) | Right Shift |
 | Spin kick | Q | O |
 
 Other keys:

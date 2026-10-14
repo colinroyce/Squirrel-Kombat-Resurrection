@@ -54,7 +54,7 @@ public.
     dripping cursor appear only with Options → Blood → ON. This matches the original, so leave it.
 11. **Military Muskrat is unlocked by winning the Tournament** (Colin's choice, an addition).
     - The original's way, a key code on the character screen (six presses in a row: left, jump,
-      right, punch, uppercut, spin; A W D S L Shift Q by default), also works, as a cheat (see 5).
+      right, punch, uppercut, spin; A W D S Space Q by default), also works, as a cheat (see 5).
       See docs/SPEC.md "Military Muskrat".
     - The original Tournament can't be won (its 12th place is left empty), so Colin chose to make
       Military Muskrat the 12th, final opponent. Beating him unlocks him (`UnlockMuskrat` in
@@ -254,11 +254,13 @@ capstone, and a patched deark.
   fighter (combos in the player's current keys, facing right; Military Muskrat hidden until
   unlocked), flipped with the arrow or walk keys or the on-screen buttons. The original pause only
   showed PICT 9000. The original paused on P and quit on Esc; now only Esc pauses (P is player 2's
-  jump) and quitting a fight is the guide's QUIT button.
+  jump) and quitting a fight is the guide's QUIT button. The menus' squirrel-head cursor is drawn on the guide (no blood
+  drips) so its buttons are easy to click.
 - **The pause picture shows only PAUSED**: PICT 9000's "HIT P TO UNPAUSE" line is cut off, since P no
   longer pauses (`drawPaused` in `src/screens/pauseguide.js`).
-- **New default keys** (`DEFAULT_KEYS` in `src/state.js`): player 1's uppercut is Left Shift (was
-  Space); player 2 is L ' P ; [ O and Right Shift (was the number pad). Right Shift gets its own key
+- **New default keys** (`DEFAULT_KEYS` in `src/state.js`): player 2 is L ' P ; [ O and Right Shift
+  (was the number pad). Player 1 keeps the original keys, but in two-player games their uppercut is
+  Left Shift while it is still set to Space (Colin's choice; `GetKey`). Right Shift gets its own key
   code (`src/input.js`). Saved keys still on an original default move to the new ones.
 - New art goes in `assets/added/`, with a line in `assets/added/README.md`.
 - Never hand-edit the extracted originals in `assets/`; regenerate them with `tools/extract`.

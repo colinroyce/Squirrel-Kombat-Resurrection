@@ -9,7 +9,7 @@ import { PlaySound } from '../sound.js';
 import { Fade, FadeBack } from '../fade.js';
 import { T } from '../templates.js';
 import { KillSpriteControls, NewCursorSprite, nextFrame } from '../common.js';
-import { DEFAULT_KEYS, prefs, savePrefs } from '../state.js';
+import { DEFAULT_KEYS, GetKeyName, prefs, savePrefs } from '../state.js';
 import { NewOptionsScreenSprites } from './options.js';
 
 const LABELS = ['Left', 'Jump', 'Right', 'Punch', 'Kick', 'Uppercut', 'Spin Kick'];
@@ -25,10 +25,10 @@ const NAMES = {
 
 const ks = { done: 0, editing: -1, rects: Array.from({ length: 14 }, () => ({ top: 0, left: 0, bottom: 0, right: 0 })) };
 
-// CharToString2: the key's name, or the character stored with it.
-export function keyName(slot) {
-  const [ch, code] = prefs.keys[slot];
-  return NAMES[code] !== undefined ? NAMES[code] : ch;
+// CharToString2: the key's name, or the character stored with it. `stored` gives the key as set
+// on this screen, without the two-player uppercut change (see GetKey).
+export function keyName(slot, stored = false) {
+  return GetKeyName(slot, NAMES, stored);
 }
 
 // Label boxes (bright red) and key boxes (dark red) drawn into the background, in white Geneva 9.
@@ -43,7 +43,7 @@ function DrawKeys() {
     ks.rects[slot] = { ...r };
     offsetRect(r, w, 0);
     fillRect(kctx, r, dark);
-    drawString(kctx, r.left + 3, r.top + 15, ks.editing === slot ? '<hit key>' : keyName(slot), 9, white);
+    drawString(kctx, r.left + 3, r.top + 15, ks.editing === slot ? '<hit key>' : keyName(slot, true), 9, white);
   };
   const column = (r, base) => {
     draw(r, base + 1);

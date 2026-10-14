@@ -11,7 +11,7 @@ import { cicnStrip, copyBits, drawString, fillRect, foreColor, sctx, stringWidth
 import { CheckKey, FlushEvents, GetMouse, GetNextEvent } from '../input.js';
 import { BufferToScreen } from '../sprites.js';
 import { PlaySound } from '../sound.js';
-import { CHAR_NAMES } from '../templates.js';
+import { CHAR_NAMES, T } from '../templates.js';
 import { GetChosenChar, GetKey, GetNumPlayers, sel } from '../state.js';
 import { keyName } from './keys.js';
 import { assets } from '../assets.js';
@@ -151,13 +151,27 @@ function draw(page) {
   drawString(sctx, NEXT.left + 16, NEXT.top + 16, '>', 9, red(), true);
 }
 
+// The menus' squirrel-head cursor (cicn 7000, 6 frames), so QUIT and the page buttons are easy to
+// aim at. Placed and animated like HandleCursor (a frame every 4th game frame), without the blood
+// drips, since sparks are frozen while paused.
+const cur = { frame: 0, count: 0 };
+function drawCursor() {
+  cur.count += 1;
+  if (T.cursor.f58 < cur.count) { cur.frame = (cur.frame + 1) % 6; cur.count = 0; }
+  const m = GetMouse();
+  const strip = cicnStrip(T.cursor.type, 6, 32, 32);
+  copyBits(sctx, strip, setRect({}, cur.frame * 32, 0, cur.frame * 32 + 32, 32), setRect({}, m.h - 16, m.v - 4, m.h + 16, m.v + 28));
+}
+
 // Replaces WaitPause while the guide is up. Returns 'quit' if QUIT was clicked, else resumes.
 export async function PauseGuide() {
   const mine = fighters().indexOf(GetChosenChar(0));
   let page = mine >= 0 ? mine + 1 : 0;
   FlushEvents();
   draw(page);
+  drawCursor();
   for (;;) {
+    const start = TickCount();
     const e = GetNextEvent();
     if (e) {
       const n = pageCount();
@@ -180,10 +194,11 @@ export async function PauseGuide() {
       if (flip) {
         page = (page + flip + n) % n;
         PlaySound(0x12);
-        draw(page);
       }
     }
-    await untilTick(TickCount() + 1);
+    draw(page);
+    drawCursor();
+    await untilTick(start + 2);
   }
   FlushEvents();
   while (CheckKey(0x71) || CheckKey(0x35)) await untilTick(TickCount() + 1);

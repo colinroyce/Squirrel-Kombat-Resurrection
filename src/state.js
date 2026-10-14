@@ -10,11 +10,11 @@ const ORIGINAL_KEYS = [
   ['4', 0x56], ['8', 0x5b], ['6', 0x58], ['5', 0x57], ['9', 0x5c], ['0', 0x52], ['7', 0x59],
 ];
 
-// Not in the original (Colin's choice): new defaults so two players fit on one laptop keyboard.
-// Player 1's uppercut moves from Space to Left Shift; player 2 moves off the number pad to a mirror
-// of player 1's layout (L ' P ; [ O, uppercut Right Shift).
+// Not in the original (Colin's choice): player 2 moves off the number pad to a mirror of player 1's
+// layout (L ' P ; [ O, uppercut Right Shift), so two players fit on one laptop keyboard. Player 1
+// keeps the original keys; in two-player games their uppercut becomes Left Shift (see GetKey).
 export const DEFAULT_KEYS = [
-  ['A', 0x00], ['W', 0x0d], ['D', 0x02], ['S', 0x01], ['E', 0x0e], ['', 0x38], ['Q', 0x0c],
+  ['A', 0x00], ['W', 0x0d], ['D', 0x02], ['S', 0x01], ['E', 0x0e], [' ', 0x31], ['Q', 0x0c],
   ['L', 0x25], ['P', 0x23], ["'", 0x27], [';', 0x29], ['[', 0x21], ['', 0x3c], ['O', 0x1f],
 ];
 
@@ -35,6 +35,12 @@ export function loadPrefs() {
     prefs.keysV2 = 1;
     savePrefs();
   }
+  // An earlier version of these defaults made player 1's uppercut Left Shift; put it back to Space.
+  if (!prefs.keysV3) {
+    if (prefs.keys[5][1] === 0x38) prefs.keys[5] = DEFAULT_KEYS[5].slice();
+    prefs.keysV3 = 1;
+    savePrefs();
+  }
   SetWantsSound(prefs.sound);
   SetWantsMusic(prefs.music);
   if (prefs.muskrat || prefs.cheatMuskrat) sel.numChars = 12; // Not in the original: see UnlockMuskrat
@@ -45,7 +51,16 @@ export function savePrefs() {
   try { localStorage.setItem(STORE, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
 }
 
-export const GetKey = (slot) => prefs.keys[slot][1];
+// Not in the original: in two-player games, player 1's uppercut is Left Shift (matching player 2's
+// Right Shift) while it is still set to its default, Space.
+const twoPlayerUppercut = (slot) => slot === 5 && sel.numPlayers === 2 && prefs.keys[5][1] === 0x31;
+export const GetKey = (slot) => (twoPlayerUppercut(slot) ? 0x38 : prefs.keys[slot][1]);
+// The key's name as the game uses it right now (the Keys screen shows the stored one).
+export const GetKeyName = (slot, names, stored = false) => {
+  if (!stored && twoPlayerUppercut(slot)) return names[0x38];
+  const [ch, code] = prefs.keys[slot];
+  return names[code] !== undefined ? names[code] : ch;
+};
 export const GetSoundPref = () => prefs.sound;
 export const GetMusicPref = () => prefs.music;
 export const GetBloodPref = () => prefs.blood;
