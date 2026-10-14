@@ -40,6 +40,7 @@ import { TundraRun } from './tundra.js';
 import { CityRun } from './city.js';
 import { HandleDummy, HandleTutorial, StartTutorial } from './practice.js';
 import { PauseGuide } from '../screens/pauseguide.js';
+import { ClearComboFeed, ComboHit, ComboKey } from '../combofeed.js';
 
 export const fight = { quit: 0, goToSelection: 0 };
 export const percents = { p0: 0, p1: 0, p2: 0, p4: 0 };
@@ -162,6 +163,7 @@ export function InitKeyRecorder() {
   recs[0].last = -1;
   ClearPattern2();
   recs[1].last = -1;
+  ClearComboFeed(); // Not in the original: each round starts with an empty combo display
 }
 
 function recordKey(r, k) {
@@ -170,10 +172,13 @@ function recordKey(r, k) {
     r.idx += 1;
     r.last = k;
     if (r.idx > 4) r.idx = 0;
+    return true;
   }
+  return false;
 }
-const RecordKey1 = (k) => recordKey(recs[0], k);
-const RecordKey2 = (k) => recordKey(recs[1], k);
+// Each recorded key is also shown on the combo display (an addition, src/combofeed.js).
+const RecordKey1 = (k) => { if (recordKey(recs[0], k)) ComboKey(0, k); };
+const RecordKey2 = (k) => { if (recordKey(recs[1], k)) ComboKey(1, k); };
 
 // Does the pattern appear in the ring, starting at any of its 5 positions (wrapping)?
 function checkPattern(r, pat) {
@@ -182,7 +187,7 @@ function checkPattern(r, pat) {
     for (let i = 0; i < pat.length; i++) {
       if (r.ring[(start + i) % 5] !== pat[i]) { ok = false; break; }
     }
-    if (ok) return 1;
+    if (ok) { r.matched = pat; return 1; }
   }
   return 0;
 }
@@ -193,7 +198,11 @@ const CheckPattern2 = (...pat) => checkPattern(recs[1], pat);
 // quirks marked below, so both run this with their slot.
 function CheckMoves(n) {
   const CheckPattern = n === 0 ? CheckPattern1 : CheckPattern2;
-  const ClearPattern = n === 0 ? ClearPattern1 : ClearPattern2;
+  // A recognised move clears the pattern; the combo display (an addition) shows its name then.
+  const ClearPattern = () => {
+    ComboHit(n, recs[n].matched);
+    if (n === 0) ClearPattern1(); else ClearPattern2();
+  };
   const r = GetSpriteRect(n);
   const a2 = () => GetSpriteAction2(n);
   const ch = GetChosenChar(n);

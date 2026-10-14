@@ -56,6 +56,9 @@ first. The CPU picks its fighter at random.
   `assets/added/`).
 - Military Muskrat is unlocked by winning the Tournament, or by the original's secret key code,
   or on the Cheats page. For testing, adding `?debug` to the address unlocks him.
+- A combo display under your life bar shows your key presses as you make them and flashes a
+  special move's name in green when you pull it off (player 2's is on the right). Turn it off on
+  the Cheats page.
 - Cheats aren't hidden: Options → CHEATS switches super blood and Military Muskrat on and off, and
   shows the original's codes (type FIREMONKEY on the title screen for super blood; press left,
   jump, right, punch, uppercut, spin kick on the character screen for Military Muskrat). The

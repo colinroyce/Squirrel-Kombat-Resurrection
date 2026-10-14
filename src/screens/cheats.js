@@ -3,6 +3,7 @@
 // next to it. The codes still work: FIREMONKEY on the title screen (CheckTitleKeyDown in title.js)
 // and the secret key code on the character screen (CheckSelectionKeyDown in select.js). The page is
 // drawn like the original's Keys page: bright red label boxes and dark red value boxes in Geneva 9.
+// It also holds the switch for the combo display (src/combofeed.js), another addition.
 
 import { TickCount, offsetRect, ptInRect, setRect, untilTick } from '../mac.js';
 import { drawString, fillBackWithPict, fillRect, foreColor, kctx, mapRGB16 } from '../gfx.js';
@@ -13,7 +14,9 @@ import { PlaySound } from '../sound.js';
 import { Fade, FadeBack } from '../fade.js';
 import { T } from '../templates.js';
 import { KillSpriteControls, NewCursorSprite, nextFrame } from '../common.js';
-import { GetMuskratCheat, GetSuperBlood, MuskratWon, SetMuskratCheat, SetSuperBlood } from '../state.js';
+import {
+  GetComboFeed, GetMuskratCheat, GetSuperBlood, MuskratWon, SetComboFeed, SetMuskratCheat, SetSuperBlood,
+} from '../state.js';
 import { keyName } from './keys.js';
 import { NewOptionsScreenSprites } from './options.js';
 
@@ -44,6 +47,15 @@ function rows() {
           `Original code: on the character screen, press ${code}.`],
       toggle: MuskratWon() ? null : () => SetMuskratCheat(GetMuskratCheat() ? 0 : 1),
     },
+    {
+      label: 'Combo Display',
+      value: GetComboFeed() ? 'ON' : 'OFF',
+      notes: [
+        'Shows your key presses under your life bar in fights, and flashes',
+        'a special move\'s name in green when you pull it off. Not in the original.',
+      ],
+      toggle: () => SetComboFeed(GetComboFeed() ? 0 : 1),
+    },
   ];
 }
 
@@ -52,7 +64,7 @@ function DrawCheats() {
   const dark = mapRGB16(0x8000, 0, 0);
   const white = foreColor(0x1e);
   const black = foreColor(0x21);
-  let top = 140;
+  let top = 110;
   cs.rects = [];
   for (const row of rows()) {
     const r = setRect({}, LEFT, top, LEFT + LABEL, top + 22);
@@ -66,7 +78,7 @@ function DrawCheats() {
     const n = setRect({}, 100, top + 24, 540, top + 24 + 4 + 14 * row.notes.length);
     fillRect(kctx, n, black);
     row.notes.forEach((line, i) => drawString(kctx, n.left + 4, n.top + 13 + 14 * i, line, 9, white));
-    top += 100;
+    top += 90;
   }
   drawString(kctx, LEFT, top - 8, 'Click a value box to switch it.', 9, white);
 }

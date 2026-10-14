@@ -3,6 +3,7 @@
 import { back, bctx, fillRect, foreColor } from './gfx.js';
 import { cam, view, view2 } from './camera.js';
 import { DrawSparks1 } from './sparks.js';
+import { DrawComboFeed } from './combofeed.js';
 import { DrawHint, DrawLifeBars, DrawRadar, DrawRoundStuff, DrawScores, DrawTime, DrawTutorial } from './hud.js';
 
 export function renderBackground() {
@@ -24,6 +25,7 @@ export function drawOverlays() {
   DrawTutorial();
   DrawScores();
   DrawHint();
+  DrawComboFeed(); // Not in the original (src/combofeed.js)
 }
 
 // RenderSplit(n): view n of the world onto its half of the buffer (left for 1, right for 2).
@@ -43,4 +45,5 @@ export function drawSplitOverlays() {
   DrawRadar();
   DrawTutorial();
   DrawScores();
+  DrawComboFeed(); // Not in the original (src/combofeed.js)
 }

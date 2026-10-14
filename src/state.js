@@ -113,6 +113,13 @@ export function SetSuperBlood(v) {
   savePrefs();
 }
 
+// Not in the original: the combo display (src/combofeed.js), on unless switched off.
+export const GetComboFeed = () => (prefs.comboFeed === 0 ? 0 : 1);
+export function SetComboFeed(v) {
+  prefs.comboFeed = v;
+  savePrefs();
+}
+
 // Military Muskrat on the character screen (the secret key code). Winning the Tournament unlocks
 // him for good, whatever this is set to.
 export const MuskratWon = () => !!prefs.muskrat;

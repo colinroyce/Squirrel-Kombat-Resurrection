@@ -19,7 +19,7 @@ import { assets } from '../assets.js';
 // From the original "Special Moves" sheet (< back, > forward, p punch, k kick, u uppercut,
 // s spin kick, ^ jump), except Kathy's Flower Power: the sheet says >>s> but the game only
 // accepts >>sk.
-const MOVES = [
+export const MOVES = [
   [['Machine Gun Nuts', '<<<>u'], ['Tri Ball', '>>pp'], ['Atomic Scatter', '<p>k>'], ['Teleport', 'pkpu']],
   [['Speed By', '<>p'], ['Hit and Run', '<<>k'], ['Scorch', '<u<>k'], ['Fire Ball', '<<>>s']],
   [['Ice Blast', '>>pu'], ['Ice Fist', '<<>k'], ['Ice Column', 'pku'], ['Sneak Attack', 'ps^']],

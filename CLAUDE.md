@@ -149,6 +149,7 @@ Code map (`src/`):
   - `hud.js` — life bars, scores, rounds, timer, radar, hint
   - `fade.js`
   - `quakes.js` — screen shakes
+  - `combofeed.js` — the combo display (an addition)
   - `common.js` — cursor, screen transitions, `nextFrame`
 - **`screens/`:**
   - `splash.js` — the Monkey Farm splash and the loading screen
@@ -238,6 +239,11 @@ capstone, and a patched deark.
   button's art is built from the original buttons' letters (`assets/added/cheats-button.png`, made
   by `tools/extract/cheats_button.py`). Cheats are remembered in the browser (the original forgot
   them on quitting).
+- **The combo display** (`src/combofeed.js`, fed by `RecordKey1/2` and `CheckMoves` in
+  `src/fight/game.js`): a see-through strip under each human player's life bar shows their last key
+  presses (forward / back / up arrows, P K U S) and flashes the special move's name in green when its
+  keys are recognised. Names come from the pause guide's move list. On by default; switched on the
+  Cheats page. No failure flash (Colin's choice): the original never knows a combo was attempted.
 - **No QUIT button on the title screen** (Colin's choice): a web page has nothing to quit to
   (`NewTitleScreenSprites` in `src/screens/title.js`).
 - **No music during fights**: the theme plays on the title, character and scene screens and stops
